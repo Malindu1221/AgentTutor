@@ -2,6 +2,7 @@ import json
 from xagent.state import AgentTutorState
 from services.llm_client import call_gemini
 from utils.json_utils import extract_and_parse_json
+from agents.content import fetch_youtube_resources
 
 def adapt_roadmap_node(state: AgentTutorState) -> AgentTutorState:
     """Modifies the base roadmap to deeply align with the user's specific learning style."""
@@ -48,4 +49,23 @@ def verify_content_node(state: AgentTutorState) -> AgentTutorState:
         state["review_required"] = False
         state["status_message"] = "Roadmap verified and finalized."
         
-    return state
+        return state
+
+def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
+    """Enhances the refined roadmap by appending specific YouTube resources to each module."""
+    print("[LangGraph] Fetching YouTube learning resources for roadmap modules...")
+    
+    roadmap = state.get("refined_roadmap", [])
+    domain = state.get("domain", "")
+    
+    for module in roadmap:
+        search_query = f"{domain} {module.get('title')}"
+        # Fetch 2 video links per module
+        resources = fetch_youtube_resources(search_query, max_results=2)
+        module["resources"] = resources
+        
+    state["refined_roadmap"] = roadmap
+    state["status_message"] = "YouTube content resources appended."
+    
+    return state   
+    
