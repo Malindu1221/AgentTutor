@@ -28,11 +28,20 @@ export default function RoadmapPage() {
             <div key={step.id} className="p-6 bg-white border-l-4 border-blue-500 rounded-r-lg shadow">
               <h2 className="text-xl font-bold mb-2">Module {index + 1}: {step.title}</h2>
               <p className="text-gray-700 mb-3">{step.description}</p>
+              
+              {/* New: Step-by-Step AI Explanation */}
+              {step.step_explanation && (
+                <div className="bg-blue-50 border-l-2 border-blue-400 p-3 mb-4 text-sm text-blue-900 rounded-r">
+                  <span className="font-semibold mr-1">Why this step?</span> 
+                  {step.step_explanation}
+                </div>
+              )}
+
               <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mb-4">
                 {step.estimated_time_hours} Hours
               </span>
               
-              {/* New section to display YouTube tutorials */}
+              {/* YouTube tutorials section */}
               {step.resources && step.resources.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Recommended Tutorials</h3>

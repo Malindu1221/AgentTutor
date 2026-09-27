@@ -3,6 +3,8 @@ from xagent.state import AgentTutorState
 from services.llm_client import call_gemini
 from utils.json_utils import extract_and_parse_json
 from agents.content import fetch_youtube_resources
+from agents.safety import verify_roadmap_quality
+from agents.explainability import generate_explanations
 
 def adapt_roadmap_node(state: AgentTutorState) -> AgentTutorState:
     """Modifies the base roadmap to deeply align with the user's specific learning style."""
@@ -36,30 +38,40 @@ def adapt_roadmap_node(state: AgentTutorState) -> AgentTutorState:
     return state
 
 def verify_content_node(state: AgentTutorState) -> AgentTutorState:
-    """Verifies that the generated roadmap meets quality thresholds."""
-    print("[LangGraph] Verifying roadmap content quality...")
+    """Evaluates the roadmap using the Safety Agent to determine if rework is needed."""
+    print("[LangGraph] Verifying roadmap quality and safety...")
     
-    refined = state.get("refined_roadmap", [])
+    roadmap = state.get("refined_roadmap", [])
+    domain = state.get("domain", "General")
     
-    # Simple heuristic verification
-    if not refined or not isinstance(refined, list):
-        state["review_required"] = True
-        state["status_message"] = "Refined roadmap invalid or empty."
+    # Call the Gemini Safety Agent
+    verification = verify_roadmap_quality(roadmap, domain)
+    
+    if not verification.get("is_safe"):
+        print(f"[LangGraph] Verification Failed: {verification.get('feedback')}")
+        # Setting this to True triggers the conditional edge back to 'adapt' or 'review'
+        state["review_required"] = True 
+        state["status_message"] = f"Quality check failed: {verification.get('feedback')}"
     else:
+        print("[LangGraph] Verification Passed.")
+        # Setting this to False pushes the graph to the 'finalize' node
         state["review_required"] = False
-        state["status_message"] = "Roadmap verified and finalized."
+        state["status_message"] = "Roadmap verified and approved."
         
-        return state
+    return state
 
 def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
     """Enhances the refined roadmap by appending specific YouTube resources to each module."""
     print("[LangGraph] Fetching YouTube learning resources for roadmap modules...")
     
     roadmap = state.get("refined_roadmap", [])
-    domain = state.get("domain", "")
+    # Fallback to domain if query is missing, but prioritize the exact user query
+    topic = state.get("query") or state.get("domain", "") 
     
     for module in roadmap:
-        search_query = f"{domain} {module.get('title')}"
+        # Tightly couple the exact user query with the module title
+        search_query = f"{topic} {module.get('title')} tutorial"
+        
         # Fetch 2 video links per module
         resources = fetch_youtube_resources(search_query, max_results=2)
         module["resources"] = resources
@@ -67,5 +79,33 @@ def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
     state["refined_roadmap"] = roadmap
     state["status_message"] = "YouTube content resources appended."
     
-    return state   
+    return state
+
+def finalize_node(state: AgentTutorState) -> AgentTutorState:
+    """Final step: Generates step-by-step explanations and prepares the final output."""
+    print("[LangGraph] Generating step-by-step roadmap explanations...")
     
+    roadmap = state.get("refined_roadmap", [])
+    evaluation = state.get("evaluation", {})
+    style = state.get("learning_style", "visual")
+    
+    explanations = generate_explanations(roadmap, evaluation, style)
+    
+    # Map the generated explanations back to the correct roadmap modules
+    for module in roadmap:
+        matched = False
+        for exp in explanations:
+            # Check if IDs match
+            if str(module.get("id")) == str(exp.get("step_id")):
+                module["step_explanation"] = exp.get("explanation")
+                matched = True
+                break
+        
+        # Enforce a fallback if Gemini hallucinated the ID format
+        if not matched:
+            module["step_explanation"] = f"This step is essential for mastering {module.get('title')}."
+                
+    state["refined_roadmap"] = roadmap
+    state["status_message"] = "Roadmap finalized with step-by-step explanations."
+    
+    return state

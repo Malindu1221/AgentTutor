@@ -31,6 +31,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-gray-900">What do you want to learn?</h1>
         <input
           type="text"
+          suppressHydrationWarning
           className="w-full p-4 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500"
           placeholder="e.g., learn python programming"
           value={query}
@@ -39,6 +40,7 @@ export default function Home() {
         <button
           onClick={startSession}
           disabled={loading}
+          suppressHydrationWarning
           className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:bg-blue-300"
         >
           {loading ? "Generating Assessment..." : "Start Learning Path"}
