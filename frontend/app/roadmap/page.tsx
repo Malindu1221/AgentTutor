@@ -29,7 +29,7 @@ export default function RoadmapPage() {
               <h2 className="text-xl font-bold mb-2">Module {index + 1}: {step.title}</h2>
               <p className="text-gray-700 mb-3">{step.description}</p>
               
-              {/* New: Step-by-Step AI Explanation */}
+              {/* Step-by-Step AI Explanation */}
               {step.step_explanation && (
                 <div className="bg-blue-50 border-l-2 border-blue-400 p-3 mb-4 text-sm text-blue-900 rounded-r">
                   <span className="font-semibold mr-1">Why this step?</span> 
@@ -56,6 +56,28 @@ export default function RoadmapPage() {
                         >
                           <span className="mr-2 mt-1">▶</span>
                           <span>{res.title}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* New: Web Articles section (Tavily) */}
+              {step.web_resources && step.web_resources.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Web Articles & Documentation</h3>
+                  <ul className="space-y-2">
+                    {step.web_resources.map((article: any, i: number) => (
+                      <li key={i}>
+                        <a 
+                          href={article.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-blue-600 hover:text-blue-800 hover:underline flex items-start"
+                        >
+                          <span className="mr-2 mt-1">📄</span>
+                          <span>{article.title}</span>
                         </a>
                       </li>
                     ))}

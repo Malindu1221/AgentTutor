@@ -1,4 +1,6 @@
 import json
+import os
+import httpx
 from xagent.state import AgentTutorState
 from services.llm_client import call_gemini
 from utils.json_utils import extract_and_parse_json
@@ -107,5 +109,52 @@ def finalize_node(state: AgentTutorState) -> AgentTutorState:
                 
     state["refined_roadmap"] = roadmap
     state["status_message"] = "Roadmap finalized with step-by-step explanations."
+    
+    return state
+
+
+
+
+def web_search_node(state: AgentTutorState) -> AgentTutorState:
+    """Fetches up-to-date text articles and blog posts using Tavily API."""
+    print("[LangGraph] Fetching Web resources via Tavily...")
+    
+    roadmap = state.get("refined_roadmap", [])
+    topic = state.get("query") or state.get("domain", "")
+    api_key = os.getenv("TAVILY_API_KEY")
+    
+    if not api_key:
+        print("[LangGraph] Warning: TAVILY_API_KEY not found in .env")
+        return state
+        
+    for module in roadmap:
+        search_query = f"{topic} {module.get('title')} documentation text articles"
+        
+        try:
+            with httpx.Client() as client:
+                response = client.post(
+                    "https://api.tavily.com/search",
+                    json={
+                        "api_key": api_key,
+                        "query": search_query,
+                        "max_results": 2
+                    },
+                    timeout=15.0
+                )
+                
+                if response.status_code == 200:
+                    results = response.json().get("results", [])
+                    web_links = [{"title": r.get("title"), "url": r.get("url")} for r in results]
+                    module["web_resources"] = web_links
+                else:
+                    print(f"[Tavily Error] Status: {response.status_code}, Message: {response.text}")
+                    module["web_resources"] = []
+                    
+        except Exception as e:
+            print(f"[LangGraph] Web search failed for {module.get('title')}: {e}")
+            module["web_resources"] = []
+            
+    state["refined_roadmap"] = roadmap
+    state["status_message"] = "Web articles appended."
     
     return state

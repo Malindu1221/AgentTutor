@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, START, END
 from xagent.state import AgentTutorState
-# Added finalize_node to the imports
-from xagent.nodes import adapt_roadmap_node, verify_content_node, retrieve_content_node, finalize_node
+
+from xagent.nodes import adapt_roadmap_node, verify_content_node, retrieve_content_node, finalize_node, web_search_node
 
 def should_review(state: AgentTutorState) -> str:
     """Conditional edge router based on verification results."""
@@ -16,6 +16,10 @@ def build_graph():
     # 1. Add Nodes
     builder.add_node("adapt", adapt_roadmap_node)
     builder.add_node("retrieve", retrieve_content_node)
+    
+    
+    builder.add_node("web_search", web_search_node)
+    
     builder.add_node("verify", verify_content_node)
     # Updated to call your actual explainability function instead of the lambda
     builder.add_node("finalize", finalize_node)
@@ -23,7 +27,10 @@ def build_graph():
     # 2. Add Edges
     builder.add_edge(START, "adapt")
     builder.add_edge("adapt", "retrieve")
-    builder.add_edge("retrieve", "verify")
+    
+    # New Edges: retrieve (YouTube) -> web_search (Tavily) -> verify
+    builder.add_edge("retrieve", "web_search")
+    builder.add_edge("web_search", "verify")
     
     # 3. Add Conditional Routing
     builder.add_conditional_edges(

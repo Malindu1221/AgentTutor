@@ -1,10 +1,6 @@
 import re
-import os
 import json
-import google.generativeai as genai
-
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+from services.llm_client import call_gemini
 
 UNSAFE_PATTERNS = [
     r'\bbypass\b', r'\bjailbreak\b', r'\bhack\b', r'\bmalware\b',
@@ -25,14 +21,20 @@ def run_safety(query: str) -> dict:
 def verify_roadmap_quality(roadmap: list, domain: str) -> dict:
     """Uses Gemini LLM to verify the roadmap is safe, educational, and on-topic."""
     
+    system_instruction = (
+        "You are an expert educational Quality Assurance agent. "
+        "Review the learning roadmap, ensure it contains no harmful material, is strictly educational, "
+        "and accurately matches the given domain. "
+        "You must respond strictly in valid JSON format without Markdown formatting."
+    )
+    
     prompt = f"""
-    You are an expert educational Quality Assurance agent. 
     Review the following learning roadmap for the domain: {domain}.
     Ensure the content contains no harmful material, is strictly educational, and accurately matches the domain.
     
     Roadmap: {json.dumps(roadmap)}
     
-    You must respond strictly in valid JSON format without Markdown formatting:
+    Respond strictly in valid JSON format without Markdown formatting:
     {{
         "is_safe": true or false,
         "feedback": "Brief string explaining any issues, or 'Approved' if safe."
@@ -40,9 +42,16 @@ def verify_roadmap_quality(roadmap: list, domain: str) -> dict:
     """
     
     try:
-        response = model.generate_content(prompt)
+        # Using the centralized call_gemini gateway with the new google.genai SDK
+        response_text = call_gemini(
+            prompt=prompt, 
+            system_instruction=system_instruction, 
+            temperature=0.1,
+            model_name="gemini-1.5-flash"
+        )
+        
         # Clean the response to ensure valid JSON parsing
-        text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+        text = response_text.strip().removeprefix("```json").removesuffix("```").strip()
         return json.loads(text)
     except Exception as e:
         print(f"[Safety Agent] Error during verification: {e}")
