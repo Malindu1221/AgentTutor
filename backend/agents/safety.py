@@ -1,6 +1,6 @@
 import re
 import json
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 
 UNSAFE_PATTERNS = [
     r'\bbypass\b', r'\bjailbreak\b', r'\bhack\b', r'\bmalware\b',
@@ -19,7 +19,7 @@ def run_safety(query: str) -> dict:
     return {"status": "safe", "reasons": []}
 
 def verify_roadmap_quality(roadmap: list, domain: str) -> dict:
-    """Uses Gemini LLM to verify the roadmap is safe, educational, and on-topic."""
+    """Uses an LLM to verify the roadmap is safe, educational, and on-topic."""
     
     system_instruction = (
         "You are an expert educational Quality Assurance agent. "
@@ -42,12 +42,10 @@ def verify_roadmap_quality(roadmap: list, domain: str) -> dict:
     """
     
     try:
-        # Using the centralized call_gemini gateway with the new google.genai SDK
-        response_text = call_gemini(
+        response_text = call_groq(
             prompt=prompt, 
             system_instruction=system_instruction, 
             temperature=0.1,
-            model_name="gemini-1.5-flash"
         )
         
         # Clean the response to ensure valid JSON parsing

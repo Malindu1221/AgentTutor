@@ -1,5 +1,5 @@
 import hashlib
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 from utils.json_utils import extract_and_parse_json
 
 def generate_mcqs(topic: str, domain: str, n: int = 5) -> list:
@@ -12,7 +12,7 @@ def generate_mcqs(topic: str, domain: str, n: int = 5) -> list:
     prompt = f"Topic: {topic}"
     
     try:
-        response = call_gemini(prompt, system_instruction=system_instruction, temperature=0.3)
+        response = call_groq(prompt, system_instruction=system_instruction, temperature=0.3)
         mcqs = extract_and_parse_json(response)
         
         if isinstance(mcqs, list) and len(mcqs) == n:

@@ -1,39 +1,33 @@
-import os
-from google import genai
-from google.genai import types
+from groq import Groq
 from config import Config
 
-# Initialize Gemini API client using the new google.genai SDK
-api_key = Config.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+if not Config.GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY is missing in backend/.env file.")
 
-if not api_key:
-    raise ValueError("GEMINI_API_KEY is missing in backend/.env file.")
+client = Groq(api_key=Config.GROQ_API_KEY)
 
-# Create the genai client instance
-client = genai.Client(api_key=api_key)
 
-def call_gemini(
+def call_groq(
     prompt: str,
     system_instruction: str = None,
     temperature: float = 0.2,
     max_tokens: int = 1000,
-    model_name: str = "gemini-2.0-flash"
+    model_name: str = "openai/gpt-oss-120b",
 ) -> str:
-    """Central Gateway function to execute Gemini LLM calls using google.genai."""
+    """Send a chat completion request through the Groq API."""
     try:
-        # Build configuration using types.GenerateContentConfig
-        config = types.GenerateContentConfig(
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-        )
+        messages = []
         if system_instruction:
-            config.system_instruction = system_instruction
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
 
-        response = client.models.generate_content(
+        response = client.chat.completions.create(
             model=model_name,
-            contents=prompt,
-            config=config,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
-        return response.text.strip() if response.text else ""
+        content = response.choices[0].message.content
+        return content.strip() if content else ""
     except Exception as e:
-        raise RuntimeError(f"Gemini LLM Call Failed: {str(e)}")
+        raise RuntimeError(f"Groq LLM Call Failed: {str(e)}") from e

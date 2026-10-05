@@ -1,4 +1,4 @@
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 from utils.json_utils import extract_and_parse_json
 
 VALID_DOMAINS = [
@@ -19,7 +19,7 @@ def run_classifier(query: str) -> dict:
     prompt = f"Query: '{query}'"
     
     try:
-        response = call_gemini(prompt, system_instruction=system_instruction, temperature=0.1)
+        response = call_groq(prompt, system_instruction=system_instruction, temperature=0.1)
         parsed = extract_and_parse_json(response)
         
         if parsed and "domain" in parsed:
