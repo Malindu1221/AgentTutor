@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Backend local database and environments
+backend/sessions.db
+backend/venv/
+backend/.env
