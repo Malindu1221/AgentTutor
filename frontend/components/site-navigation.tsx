@@ -38,6 +38,7 @@ export default function SiteNavigation() {
             <>
               {link("/profile", "Profile")}
               {link("/recommendations", "Recommendations")}
+              {link("/pdf-study", "PDF Study Assistant")}
               <button
                 type="button"
                 className={navigationLinkClass}

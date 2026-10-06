@@ -9,3 +9,5 @@ uvicorn
 pymongo
 bcrypt
 PyJWT
+pypdf
+python-multipart

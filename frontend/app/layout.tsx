@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AgentTutor",
-  description: "Personalized learning roadmaps and recommendations.",
+  description: "Personalized learning roadmaps, recommendations, and PDF study tools.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
