@@ -152,6 +152,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex gap-4">
             <Link href="/" className="text-blue-700 underline">Learning home</Link>
+            <Link href="/recommendations" className="text-blue-700 underline">Recommendations</Link>
             <button
               type="button"
               onClick={() => {

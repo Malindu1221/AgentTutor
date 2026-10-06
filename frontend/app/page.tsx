@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch, responseError, useStoredAccessToken } from "../lib/api";
+import { saveSessionStorageValue } from "../lib/session";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -12,18 +13,22 @@ export default function Home() {
   const router = useRouter();
 
   const startSession = async () => {
-    if (!query) return;
+    const topic = query.trim();
+    if (!topic) {
+      setError("Enter a topic you want to learn.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const res = await apiFetch("/start_session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, user_id: "guest" }),
+        body: JSON.stringify({ query: topic }),
       });
       if (!res.ok) throw new Error(await responseError(res));
       const data = await res.json();
-      window.sessionStorage.setItem("tutorSession", JSON.stringify(data));
+      saveSessionStorageValue("tutorSession", JSON.stringify(data));
       router.push("/assessment");
     } catch (error) {
       console.error("Failed to start session:", error);
@@ -39,6 +44,7 @@ export default function Home() {
           {accessToken ? (
             <>
               <Link className="text-blue-700 underline" href="/profile">Profile</Link>
+              <Link className="text-blue-700 underline" href="/recommendations">Recommendations</Link>
             </>
           ) : (
             <>

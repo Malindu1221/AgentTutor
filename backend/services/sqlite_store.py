@@ -1,65 +1,66 @@
 import sqlite3
 import json
 import os
-from typing import Optional, Dict, Any
+from contextlib import contextmanager
+from typing import Iterator, Optional, Dict, Any
 
-DB_PATH = "sessions.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sessions.db")
+
+
+@contextmanager
+def _connection() -> Iterator[sqlite3.Connection]:
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
+
 
 def init_db():
     """Initializes SQLite tables for sessions and resource caching."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # Table to store session context between Phase 1 & Phase 2
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS sessions (
-            session_id TEXT PRIMARY KEY,
-            user_id TEXT,
-            context TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    
-    # Table to cache content recommendations
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS resources (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            keyword TEXT,
-            data TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    
-    conn.commit()
-    conn.close()
+    with _connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                user_id TEXT,
+                context TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS resources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                keyword TEXT,
+                data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
 def save_context(session_id: str, user_id: str, context: Dict[str, Any]):
     """Saves or updates the session context dictionary."""
     init_db()
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
     context_str = json.dumps(context)
-    cursor.execute("""
-        INSERT OR REPLACE INTO sessions (session_id, user_id, context, updated_at)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    """, (session_id, user_id, context_str))
-    
-    conn.commit()
-    conn.close()
+    with _connection() as conn:
+        conn.execute("""
+            INSERT INTO sessions (session_id, user_id, context, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(session_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                context = excluded.context,
+                updated_at = CURRENT_TIMESTAMP
+        """, (session_id, user_id, context_str))
 
 def load_context(session_id: str) -> Optional[Dict[str, Any]]:
     """Loads a session context dictionary by session_id."""
     if not os.path.exists(DB_PATH):
         return None
-        
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT context FROM sessions WHERE session_id = ?", (session_id,))
-    row = cursor.fetchone()
-    conn.close()
-    
+    with _connection() as conn:
+        row = conn.execute(
+            "SELECT context FROM sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
     if row and row[0]:
         return json.loads(row[0])
     return None

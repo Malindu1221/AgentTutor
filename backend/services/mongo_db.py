@@ -21,3 +21,4 @@ def ensure_mongo_indexes() -> None:
     database = get_mongo_database()
     database.users.create_index("email", unique=True)
     database.profiles.create_index("user_id", unique=True)
+    database.recommendations.create_index("user_id", unique=True)

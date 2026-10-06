@@ -1,5 +1,5 @@
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from agents.safety import run_safety
 from agents.classifier import run_classifier
 from agents.style_detector import detect_style
@@ -65,8 +65,27 @@ def submit_answers(
         return {"error": "Session not found"}
     if context.get("user_id", "guest") != user_id:
         return {"error": "Session not found or access denied"}
+    if context.get("stage") == "completed":
+        return {
+            "session_id": session_id,
+            "evaluation": context.get("difficulty", {}),
+            "roadmap": context.get("roadmap", []),
+            "recommendations": context.get("recommendations", {}),
+            "explanations": context.get("explanations", []),
+        }
+    if context.get("stage") != "awaiting_answers":
+        return {"error": "Session is not awaiting answers"}
 
     mcqs = context.get("mcqs", [])
+    expected_answer_ids = {question.get("id") for question in mcqs}
+    if set(user_answers) != expected_answer_ids:
+        return {"error": "Please submit one answer for every assessment question"}
+    for question in mcqs:
+        answer = user_answers.get(question.get("id"))
+        options = question.get("options", [])
+        if isinstance(answer, bool) or not isinstance(answer, int) or not 0 <= answer < len(options):
+            return {"error": "One or more assessment answers are invalid"}
+
     query = context.get("query", "")
     domain = context.get("domain", "general")
     style = context.get("style", "mixed")
@@ -117,6 +136,40 @@ def submit_answers(
 
         recommendations = content_future.result()
         explanations = explain_future.result()
+
+    if not isinstance(recommendations, dict):
+        recommendations = {}
+    if not isinstance(explanations, list):
+        explanations = []
+
+    explanations_by_id = {
+        str(item.get("step_id")): item.get("explanation")
+        for item in explanations
+        if isinstance(item, dict)
+        and item.get("step_id") is not None
+        and isinstance(item.get("explanation"), str)
+    }
+    for step in roadmap:
+        step_id = str(step.get("id", ""))
+        if not step.get("step_explanation") and step_id in explanations_by_id:
+            step["step_explanation"] = explanations_by_id[step_id]
+
+        step_recommendations = recommendations.get(step.get("title"), [])
+        if not isinstance(step_recommendations, list):
+            step_recommendations = []
+        if not step.get("resources") and step_recommendations:
+            step["resources"] = [
+                {
+                    "title": item.get("title", "Recommended learning resource"),
+                    "url": item["url"],
+                    "description": item.get("description", ""),
+                    "type": "recommended_resource",
+                }
+                for item in step_recommendations
+                if isinstance(item, dict)
+                and isinstance(item.get("url"), str)
+                and item["url"].startswith(("https://", "http://"))
+            ]
 
     context["difficulty"] = eval_result
     context["roadmap"] = roadmap
