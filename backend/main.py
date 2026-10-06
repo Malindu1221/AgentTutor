@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import orchestrator
 from auth import get_optional_current_user, router as auth_router
 from personal_mongo import router as profile_router
+from recommendation_api import router as recommendation_router
 
 app = FastAPI(title="AgentTutor API", version="1.0")
 
@@ -17,6 +18,7 @@ app.add_middleware(
 )
 app.include_router(auth_router)
 app.include_router(profile_router)
+app.include_router(recommendation_router)
 
 # Request Models
 class StartSessionRequest(BaseModel):

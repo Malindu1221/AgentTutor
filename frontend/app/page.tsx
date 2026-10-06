@@ -39,6 +39,7 @@ export default function Home() {
           {accessToken ? (
             <>
               <Link className="text-blue-700 underline" href="/profile">Profile</Link>
+              <Link className="text-blue-700 underline" href="/recommendations">Recommendations</Link>
             </>
           ) : (
             <>

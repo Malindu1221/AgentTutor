@@ -7,6 +7,7 @@ This document describes the project's **current implementation**. The agents are
 - **Frontend:** A Next.js web app where a learner enters a topic, answers a diagnostic quiz, and views the resulting learning path. See the [home page](./frontend/app/page.tsx), [assessment page](./frontend/app/assessment/page.tsx), and [roadmap page](./frontend/app/roadmap/page.tsx).
 - **API:** A FastAPI backend with `/start_session` and `/submit_answers` endpoints, plus a basic health endpoint. See [main.py](./backend/main.py).
 - **Authentication and profiles:** `/api/auth/register` and `/api/auth/login` issue bearer JWTs; `/api/profile/me` provides authenticated profile CRUD backed by MongoDB. See [auth.py](./backend/auth.py) and [personal_mongo.py](./backend/personal_mongo.py).
+- **Personalized recommendations:** Authenticated `GET /recommendations` returns the latest saved user results; `POST /recommendations/generate` runs the recommendation LangGraph to collect YouTube and web resources, rank with local hashing-vector embeddings, and save them to MongoDB. See [recommendation_api.py](./backend/recommendation_api.py) and [recommendations.py](./backend/xagent/recommendations.py).
 - **Orchestrator:** Coordinates the agents and stores session data between the two API phases. See [orchestrator.py](./backend/orchestrator.py).
 - **Agents and workflow nodes:** Handle safety checks, classification, assessment, roadmap creation, resource retrieval, roadmap verification, and explanations. See the [agents directory](./backend/agents) and [LangGraph nodes](./backend/xagent/nodes.py).
 - **Shared services:** Groq API calls go through [llm_client.py](./backend/services/llm_client.py); session context is stored in SQLite by [sqlite_store.py](./backend/services/sqlite_store.py).
@@ -93,6 +94,8 @@ Browser
 These are **function-call and shared-state connections**, not direct agent-to-agent messaging. The orchestrator determines which Python functions run, and LangGraph carries workflow data in the typed state defined in [state.py](./backend/xagent/state.py). Groq API requests are centralized through [llm_client.py](./backend/services/llm_client.py).
 
 Authentication uses bearer tokens in the `Authorization` header. Authenticated sessions are tied to the MongoDB user ID and cannot be submitted by another account; requests without a token continue to use the guest session path. The profile's learning-related fields are used only when present, and are sent as contextual input to Groq for personalization.
+
+The dedicated recommendation flow uses the JWT subject and email, loads the caller's MongoDB profile, queries YouTube and Tavily using up to five profile-derived topics, computes vector similarity between the profile and each result, and persists the top fifteen results in the MongoDB `recommendations` collection. Both provider keys must be configured for this combined search flow.
 
 ## Important current behavior and limitations
 
