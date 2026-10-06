@@ -9,6 +9,7 @@ from agents.content import recommend_content
 from agents.explainability import generate_explanations
 from services.sqlite_store import save_context, load_context
 from xagent.graph import tutor_graph
+from personal_mongo import get_profile_for_user
 
 def start_session(query: str, user_id: str = "guest") -> dict:
     """Phase 1 Pipeline: Runs Safety -> Classifier -> Style Detector -> MCQ Generator."""
@@ -53,16 +54,24 @@ def start_session(query: str, user_id: str = "guest") -> dict:
         "mcqs": public_mcqs
     }
 
-def submit_answers(session_id: str, user_answers: dict) -> dict:
+def submit_answers(
+    session_id: str,
+    user_answers: dict,
+    user_id: str = "guest",
+) -> dict:
     """Phase 2 Pipeline: Evaluates answers -> Roadmap -> Parallel Content & Explanations."""
     context = load_context(session_id)
     if not context:
         return {"error": "Session not found"}
+    if context.get("user_id", "guest") != user_id:
+        return {"error": "Session not found or access denied"}
 
     mcqs = context.get("mcqs", [])
     query = context.get("query", "")
     domain = context.get("domain", "general")
     style = context.get("style", "mixed")
+    user_profile = get_profile_for_user(user_id) if user_id != "guest" else {}
+    user_profile = user_profile or {}
 
     # 1. Evaluate answers
     eval_result = evaluate_answers(mcqs, user_answers)
@@ -77,7 +86,9 @@ def submit_answers(session_id: str, user_answers: dict) -> dict:
         "domain": domain,
         "difficulty_level": difficulty,
         "learning_style": style,
-        "base_roadmap": roadmap
+        "base_roadmap": roadmap,
+        "user_profile": user_profile,
+        "evaluation": eval_result,
     }
     
     final_state = tutor_graph.invoke(initial_state)
@@ -88,8 +99,21 @@ def submit_answers(session_id: str, user_answers: dict) -> dict:
     explanations = []
 
     with ThreadPoolExecutor(max_workers=3) as executor:
-        content_future = executor.submit(recommend_content, roadmap, domain, difficulty, 3)
-        explain_future = executor.submit(generate_explanations, roadmap, eval_result, style)
+        content_future = executor.submit(
+            recommend_content,
+            roadmap,
+            domain,
+            difficulty,
+            3,
+            user_profile,
+        )
+        explain_future = executor.submit(
+            generate_explanations,
+            roadmap,
+            eval_result,
+            style,
+            user_profile,
+        )
 
         recommendations = content_future.result()
         explanations = explain_future.result()

@@ -6,6 +6,7 @@ This document describes the project's **current implementation**. The agents are
 
 - **Frontend:** A Next.js web app where a learner enters a topic, answers a diagnostic quiz, and views the resulting learning path. See the [home page](./frontend/app/page.tsx), [assessment page](./frontend/app/assessment/page.tsx), and [roadmap page](./frontend/app/roadmap/page.tsx).
 - **API:** A FastAPI backend with `/start_session` and `/submit_answers` endpoints, plus a basic health endpoint. See [main.py](./backend/main.py).
+- **Authentication and profiles:** `/api/auth/register` and `/api/auth/login` issue bearer JWTs; `/api/profile/me` provides authenticated profile CRUD backed by MongoDB. See [auth.py](./backend/auth.py) and [personal_mongo.py](./backend/personal_mongo.py).
 - **Orchestrator:** Coordinates the agents and stores session data between the two API phases. See [orchestrator.py](./backend/orchestrator.py).
 - **Agents and workflow nodes:** Handle safety checks, classification, assessment, roadmap creation, resource retrieval, roadmap verification, and explanations. See the [agents directory](./backend/agents) and [LangGraph nodes](./backend/xagent/nodes.py).
 - **Shared services:** Groq API calls go through [llm_client.py](./backend/services/llm_client.py); session context is stored in SQLite by [sqlite_store.py](./backend/services/sqlite_store.py).
@@ -31,7 +32,7 @@ This document describes the project's **current implementation**. The agents are
 ### Phase 1: Start a learning session
 
 1. The browser sends the learner's query to `POST /start_session`.
-2. The API passes it to `orchestrator.start_session`.
+2. The API identifies the bearer-token user when one is present; without a token, it retains the guest flow. It passes the user ID and query to `orchestrator.start_session`.
 3. The safety filter checks the query. If it finds a restricted pattern, the request returns an error and the later agents do not run.
 4. The classifier determines the domain and intent.
 5. The style detector estimates the learner's preferred style.
@@ -51,7 +52,7 @@ The session is persisted by the SQLite service in [sqlite_store.py](./backend/se
    - 30% through below 80%: **intermediate**
    - 80% or above: **advanced**
 4. The roadmap agent creates a six-step base roadmap.
-5. The orchestrator passes the roadmap and learner details into the LangGraph workflow.
+5. For an authenticated learner, the orchestrator loads that user's MongoDB profile by user ID and passes its education, work history, projects, and skills as context to the LangGraph workflow and recommendation/explanation generators.
 6. LangGraph adapts the roadmap, adds YouTube resources, attempts web search, and verifies roadmap quality.
 7. After the graph returns, the orchestrator runs the separate content recommender and explanation generator concurrently.
 8. The orchestrator saves the completed context and returns the evaluation, roadmap, recommendations, and explanations.
@@ -75,6 +76,7 @@ Browser
        └─ Orchestrator
             ├─ SQLite: load session
             ├─ Answer evaluator
+            ├─ MongoDB: load authenticated learner profile (if present)
             ├─ Roadmap generator
             ├─ LangGraph
             │    ├─ Adapt roadmap
@@ -89,6 +91,8 @@ Browser
 ```
 
 These are **function-call and shared-state connections**, not direct agent-to-agent messaging. The orchestrator determines which Python functions run, and LangGraph carries workflow data in the typed state defined in [state.py](./backend/xagent/state.py). Groq API requests are centralized through [llm_client.py](./backend/services/llm_client.py).
+
+Authentication uses bearer tokens in the `Authorization` header. Authenticated sessions are tied to the MongoDB user ID and cannot be submitted by another account; requests without a token continue to use the guest session path. The profile's learning-related fields are used only when present, and are sent as contextual input to Groq for personalization.
 
 ## Important current behavior and limitations
 

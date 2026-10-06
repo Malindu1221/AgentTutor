@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Dict, Any
+from typing import TypedDict, List, Dict, Any, NotRequired
 
 class AgentTutorState(TypedDict):
     """The shared state that flows through the LangGraph recommendation pipeline."""
@@ -10,6 +10,8 @@ class AgentTutorState(TypedDict):
     
     # Data from Orchestrator (Phase 2)
     base_roadmap: List[Dict[str, Any]]
+    user_profile: NotRequired[Dict[str, Any]]
+    evaluation: NotRequired[Dict[str, Any]]
     
     # LangGraph Output
     refined_roadmap: List[Dict[str, Any]]
