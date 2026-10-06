@@ -20,17 +20,21 @@ export default function RegisterPage() {
       setError("Passwords do not match.");
       return;
     }
+    if (new TextEncoder().encode(password).length > 72) {
+      setError("Password must be no longer than 72 UTF-8 bytes.");
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
       if (!response.ok) throw new Error(await responseError(response));
       const data = await response.json();
       saveAccessToken(data.access_token);
-      router.push("/profile");
+      router.replace("/");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Registration failed.");
     } finally {
@@ -50,7 +54,10 @@ export default function RegisterPage() {
             required
             maxLength={254}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
             className="w-full rounded border p-3"
           />
         </label>
@@ -63,7 +70,10 @@ export default function RegisterPage() {
             minLength={8}
             maxLength={72}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError("");
+            }}
             className="w-full rounded border p-3"
           />
         </label>
@@ -76,7 +86,10 @@ export default function RegisterPage() {
             minLength={8}
             maxLength={72}
             value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              setError("");
+            }}
             className="w-full rounded border p-3"
           />
         </label>

@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import AuthGuard from "../../components/auth-guard";
 import {
   apiFetch,
   clearAccessToken,
-  getAccessToken,
   responseError,
 } from "../../lib/api";
 
@@ -29,13 +29,14 @@ type RecommendationResponse = {
   generated_at: string | null;
 };
 
-export default function RecommendationsPage() {
+function RecommendationsContent() {
   const router = useRouter();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+  const initialLoadStarted = useRef(false);
 
   const loadRecommendations = useCallback(async () => {
     const response = await apiFetch("/recommendations");
@@ -50,37 +51,7 @@ export default function RecommendationsPage() {
     setGeneratedAt(result.generated_at);
   }, [router]);
 
-  useEffect(() => {
-    let active = true;
-    if (!getAccessToken()) {
-      router.replace("/login");
-      return () => {
-        active = false;
-      };
-    }
-
-    const timeout = window.setTimeout(() => {
-      void loadRecommendations()
-        .catch((loadError: unknown) => {
-          if (active) {
-            setError(
-              loadError instanceof Error
-                ? loadError.message
-                : "Could not load recommendations.",
-            );
-          }
-        })
-        .finally(() => {
-          if (active) setLoading(false);
-        });
-    }, 0);
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-    };
-  }, [loadRecommendations, router]);
-
-  const generateRecommendations = async () => {
+  const generateRecommendations = useCallback(async () => {
     setGenerating(true);
     setError("");
     try {
@@ -105,7 +76,54 @@ export default function RecommendationsPage() {
     } finally {
       setGenerating(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    if (initialLoadStarted.current) return;
+
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      if (!active || initialLoadStarted.current) return;
+      initialLoadStarted.current = true;
+      const shouldGenerate =
+        new URLSearchParams(window.location.search).get("generate") === "1";
+      if (shouldGenerate) {
+        window.history.replaceState(null, "", window.location.pathname);
+        void generateRecommendations()
+          .catch((loadError: unknown) => {
+            if (active) {
+              setError(
+                loadError instanceof Error
+                  ? loadError.message
+                  : "Could not generate recommendations.",
+              );
+            }
+          })
+          .finally(() => {
+            if (active) setLoading(false);
+          });
+        return;
+      }
+
+      void loadRecommendations()
+        .catch((loadError: unknown) => {
+          if (active) {
+            setError(
+              loadError instanceof Error
+                ? loadError.message
+                : "Could not load recommendations.",
+            );
+          }
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [generateRecommendations, loadRecommendations, router]);
 
   return (
     <main className="min-h-screen bg-gray-50 px-5 py-8 text-gray-900 md:px-10">
@@ -250,5 +268,13 @@ export default function RecommendationsPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function RecommendationsPage() {
+  return (
+    <AuthGuard>
+      <RecommendationsContent />
+    </AuthGuard>
   );
 }
