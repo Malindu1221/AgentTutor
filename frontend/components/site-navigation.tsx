@@ -38,7 +38,6 @@ export default function SiteNavigation() {
             <>
               {link("/profile", "Profile")}
               {link("/recommendations", "Recommendations")}
-              {link("/analytics", "Analytics")}
               {link("/pdf-study", "PDF Study Assistant")}
               <button
                 type="button"
