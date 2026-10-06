@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -38,6 +37,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
     if (!getAccessToken()) {
@@ -127,6 +127,7 @@ export default function ProfilePage() {
       if (!response.ok) throw new Error(await responseError(response));
       setProfile(payload);
       setProfileExists(true);
+      setProfileSaved(true);
       setMessage("Profile saved.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save profile.");
@@ -150,20 +151,6 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-bold">Your learning profile</h1>
             <p className="mt-1 text-gray-600">Add a separate entry on each line.</p>
           </div>
-          <div className="flex gap-4">
-            <Link href="/" className="text-blue-700 underline">Learning home</Link>
-            <Link href="/recommendations" className="text-blue-700 underline">Recommendations</Link>
-            <button
-              type="button"
-              onClick={() => {
-                clearAccessToken();
-                router.push("/");
-              }}
-              className="text-blue-700 underline"
-            >
-              Log out
-            </button>
-          </div>
         </header>
 
         <p className="rounded bg-blue-50 p-4 text-sm text-blue-900">
@@ -171,7 +158,11 @@ export default function ProfilePage() {
           education, work, project, and skill details are included as context in AI requests.
         </p>
 
-        <form onSubmit={saveProfile} className="space-y-5 rounded-xl bg-white p-6 shadow">
+        <form
+          onSubmit={saveProfile}
+          onChange={() => setProfileSaved(false)}
+          className="space-y-5 rounded-xl bg-white p-6 shadow"
+        >
           {[
             ["education", "Education", "Institution, qualification, subject, or learning goal"],
             ["work_history", "Work experience", "Role, organization, responsibilities, or experience"],
@@ -205,6 +196,18 @@ export default function ProfilePage() {
           >
             {saving ? "Saving..." : "Save profile"}
           </button>
+          {profileSaved && (
+            <div className="rounded-lg bg-green-50 p-4 text-green-900">
+              <p role="status">Profile saved. Regenerate recommendations to use these updates.</p>
+              <button
+                type="button"
+                onClick={() => router.push("/recommendations?generate=1")}
+                className="mt-3 rounded-lg bg-green-800 px-4 py-2 font-semibold text-white hover:bg-green-900"
+              >
+                Generate updated recommendations
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </main>

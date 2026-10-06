@@ -1,18 +1,18 @@
 "use client";
-import { useState } from "react";
+
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { apiFetch, responseError, useStoredAccessToken } from "../lib/api";
+import { apiFetch, responseError } from "../lib/api";
 import { saveSessionStorageValue } from "../lib/session";
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const accessToken = useStoredAccessToken();
   const router = useRouter();
 
-  const startSession = async () => {
+  const startSession = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     const topic = query.trim();
     if (!topic) {
       setError("Enter a topic you want to learn.");
@@ -33,6 +33,7 @@ export default function Home() {
     } catch (error) {
       console.error("Failed to start session:", error);
       setError(error instanceof Error ? error.message : "Could not start the learning session.");
+    } finally {
       setLoading(false);
     }
   };
@@ -40,37 +41,34 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-50">
       <div className="max-w-xl w-full space-y-8 p-10 bg-white rounded-xl shadow-md text-center">
-        <nav className="flex justify-end gap-4 text-sm">
-          {accessToken ? (
-            <>
-              <Link className="text-blue-700 underline" href="/profile">Profile</Link>
-              <Link className="text-blue-700 underline" href="/recommendations">Recommendations</Link>
-            </>
-          ) : (
-            <>
-              <Link className="text-blue-700 underline" href="/login">Log in</Link>
-              <Link className="text-blue-700 underline" href="/register">Register</Link>
-            </>
-          )}
-        </nav>
         <h1 className="text-3xl font-bold text-gray-900">What do you want to learn?</h1>
-        <input
-          type="text"
-          suppressHydrationWarning
-          className="w-full p-4 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., learn python programming"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <button
-          onClick={startSession}
-          disabled={loading}
-          suppressHydrationWarning
-          className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:bg-blue-300"
-        >
-          {loading ? "Generating Assessment..." : "Start Learning Path"}
-        </button>
-        {error && <p role="alert" className="text-left text-red-700">{error}</p>}
+        <form onSubmit={startSession} className="space-y-4">
+          <label htmlFor="learning-topic" className="sr-only">
+            Topic you want to learn
+          </label>
+          <input
+            id="learning-topic"
+            name="query"
+            type="text"
+            required
+            maxLength={500}
+            className="w-full rounded-lg border border-gray-300 p-4 text-black focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., learn python programming"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setError("");
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 px-6 py-4 font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300"
+          >
+            {loading ? "Generating Assessment..." : "Start Learning Path"}
+          </button>
+          {error && <p role="alert" className="text-left text-red-700">{error}</p>}
+        </form>
       </div>
     </main>
   );
