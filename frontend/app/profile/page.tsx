@@ -2,10 +2,10 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AuthGuard from "../../components/auth-guard";
 import {
   apiFetch,
   clearAccessToken,
-  getAccessToken,
   responseError,
 } from "../../lib/api";
 
@@ -29,7 +29,7 @@ function linesToList(value: string): string[] {
   return value.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
-export default function ProfilePage() {
+function ProfileContent() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [profileExists, setProfileExists] = useState(false);
@@ -40,11 +40,6 @@ export default function ProfilePage() {
   const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
-    if (!getAccessToken()) {
-      router.replace("/login");
-      return;
-    }
-
     const loadProfile = async () => {
       try {
         const response = await apiFetch("/api/profile/me");
@@ -211,5 +206,13 @@ export default function ProfilePage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <AuthGuard>
+      <ProfileContent />
+    </AuthGuard>
   );
 }

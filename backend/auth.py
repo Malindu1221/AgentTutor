@@ -210,3 +210,10 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+@router.get("/me")
+def read_current_user(
+    user: dict[str, str] = Depends(get_current_user),
+) -> dict[str, str]:
+    return user

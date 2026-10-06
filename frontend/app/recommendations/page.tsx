@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import AuthGuard from "../../components/auth-guard";
 import {
   apiFetch,
   clearAccessToken,
-  getAccessToken,
   responseError,
 } from "../../lib/api";
 
@@ -29,7 +29,7 @@ type RecommendationResponse = {
   generated_at: string | null;
 };
 
-export default function RecommendationsPage() {
+function RecommendationsContent() {
   const router = useRouter();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
@@ -82,13 +82,6 @@ export default function RecommendationsPage() {
     if (initialLoadStarted.current) return;
 
     let active = true;
-    if (!getAccessToken()) {
-      router.replace("/login");
-      return () => {
-        active = false;
-      };
-    }
-
     const timeout = window.setTimeout(() => {
       if (!active || initialLoadStarted.current) return;
       initialLoadStarted.current = true;
@@ -275,5 +268,13 @@ export default function RecommendationsPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function RecommendationsPage() {
+  return (
+    <AuthGuard>
+      <RecommendationsContent />
+    </AuthGuard>
   );
 }
