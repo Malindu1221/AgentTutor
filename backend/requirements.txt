@@ -1,0 +1,8 @@
+fastapi
+groq
+httpx
+langgraph
+pydantic
+python-dotenv
+requests
+uvicorn

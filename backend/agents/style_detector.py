@@ -1,4 +1,4 @@
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 
 VALID_STYLES = ["visual", "auditory", "reading", "kinesthetic", "mixed"]
 
@@ -11,7 +11,7 @@ def detect_style(query: str, user_profile: dict = None) -> str:
     prompt = f"Query: '{query}'"
     
     try:
-        response = call_gemini(prompt, system_instruction=system_instruction, max_tokens=10)
+        response = call_groq(prompt, system_instruction=system_instruction, max_tokens=10)
         cleaned = response.strip().lower()
         if cleaned in VALID_STYLES:
             return cleaned

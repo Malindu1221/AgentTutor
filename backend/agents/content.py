@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 from utils.json_utils import extract_and_parse_json
 import os
 import requests
@@ -43,7 +43,7 @@ def recommend_content(step_items: list, domain: str, difficulty: str, limit: int
         prompt = f"Step: {title}"
 
         try:
-            response = call_gemini(prompt, system_instruction=system_instruction, max_tokens=500)
+            response = call_groq(prompt, system_instruction=system_instruction, max_tokens=500)
             res = extract_and_parse_json(response)
             if isinstance(res, list):
                 recommendations[title] = res

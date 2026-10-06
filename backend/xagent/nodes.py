@@ -2,7 +2,7 @@ import json
 import os
 import httpx
 from xagent.state import AgentTutorState
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 from utils.json_utils import extract_and_parse_json
 from agents.content import fetch_youtube_resources
 from agents.safety import verify_roadmap_quality
@@ -24,7 +24,7 @@ def adapt_roadmap_node(state: AgentTutorState) -> AgentTutorState:
     prompt = f"Base Roadmap: {json.dumps(base_roadmap)}"
     
     try:
-        response = call_gemini(prompt, system_instruction=system_instruction, max_tokens=1500)
+        response = call_groq(prompt, system_instruction=system_instruction, max_tokens=1500)
         refined = extract_and_parse_json(response)
         
         # Verify output matches expected structure
@@ -46,7 +46,7 @@ def verify_content_node(state: AgentTutorState) -> AgentTutorState:
     roadmap = state.get("refined_roadmap", [])
     domain = state.get("domain", "General")
     
-    # Call the Gemini Safety Agent
+    # Call the roadmap quality verifier
     verification = verify_roadmap_quality(roadmap, domain)
     
     if not verification.get("is_safe"):
@@ -103,7 +103,7 @@ def finalize_node(state: AgentTutorState) -> AgentTutorState:
                 matched = True
                 break
         
-        # Enforce a fallback if Gemini hallucinated the ID format
+        # Enforce a fallback if the model returned an unexpected ID format
         if not matched:
             module["step_explanation"] = f"This step is essential for mastering {module.get('title')}."
                 

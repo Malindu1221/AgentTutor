@@ -1,5 +1,5 @@
 import json
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 from utils.json_utils import extract_and_parse_json
 
 def generate_explanations(roadmap: list, difficulty_info: dict, style: str) -> list:
@@ -19,10 +19,10 @@ def generate_explanations(roadmap: list, difficulty_info: dict, style: str) -> l
     prompt = f"Roadmap steps: {json.dumps(simplified_roadmap)}"
     
     try:
-        res = call_gemini(prompt, system_instruction=system_instruction, max_tokens=1000)
+        res = call_groq(prompt, system_instruction=system_instruction, max_tokens=1000)
         parsed = extract_and_parse_json(res)
         
-        # Verify Gemini returned a valid list of explanations
+        # Verify the model returned a valid list of explanations
         if isinstance(parsed, list) and len(parsed) > 0:
             return parsed
     except Exception as e:

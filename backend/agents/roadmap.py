@@ -1,4 +1,4 @@
-from services.llm_client import call_gemini
+from services.llm_client import call_groq
 from utils.json_utils import extract_and_parse_json
 
 def generate_roadmap(topic: str, difficulty: str, style: str, domain: str) -> list:
@@ -13,7 +13,7 @@ def generate_roadmap(topic: str, difficulty: str, style: str, domain: str) -> li
     prompt = f"Topic: {topic}"
 
     try:
-        response = call_gemini(prompt, system_instruction=system_instruction, max_tokens=900)
+        response = call_groq(prompt, system_instruction=system_instruction, max_tokens=900)
         roadmap = extract_and_parse_json(response)
         if isinstance(roadmap, list) and len(roadmap) > 0:
             return roadmap
