@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 import orchestrator
 from auth import get_optional_current_user, router as auth_router
+from analytics_api import router as analytics_router
 from personal_mongo import router as profile_router
 from pdf_api import router as pdf_router
 from recommendation_api import router as recommendation_router
@@ -18,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router)
+app.include_router(analytics_router)
 app.include_router(profile_router)
 app.include_router(pdf_router)
 app.include_router(recommendation_router)
