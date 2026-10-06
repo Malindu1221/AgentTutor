@@ -2,6 +2,7 @@ import sqlite3
 import json
 import os
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Iterator, Optional, Dict, Any
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sessions.db")
@@ -37,6 +38,14 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS session_activity (
+                session_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                active_date TEXT NOT NULL,
+                PRIMARY KEY (session_id, active_date)
+            )
+        """)
 
 def save_context(session_id: str, user_id: str, context: Dict[str, Any]):
     """Saves or updates the session context dictionary."""
@@ -51,6 +60,14 @@ def save_context(session_id: str, user_id: str, context: Dict[str, Any]):
                 context = excluded.context,
                 updated_at = CURRENT_TIMESTAMP
         """, (session_id, user_id, context_str))
+        active_date = datetime.now(timezone.utc).date().isoformat()
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO session_activity (session_id, user_id, active_date)
+            VALUES (?, ?, ?)
+            """,
+            (session_id, user_id, active_date),
+        )
 
 def load_context(session_id: str) -> Optional[Dict[str, Any]]:
     """Loads a session context dictionary by session_id."""

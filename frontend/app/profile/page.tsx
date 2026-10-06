@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthGuard from "../../components/auth-guard";
+import AnalyticsDashboard from "../../components/analytics-dashboard";
 import {
   apiFetch,
   clearAccessToken,
@@ -131,16 +132,12 @@ function ProfileContent() {
     }
   };
 
-  if (loading) {
-    return <main className="p-10 text-center text-black">Loading profile...</main>;
-  }
-
   const listText = (values: string[]) => values.join("\n");
   const bookmarkText = profile.bookmarks.map((item) => `${item.title} | ${item.url}`).join("\n");
 
   return (
     <main className="min-h-screen bg-gray-50 p-6 text-black md:p-12">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold">Your learning profile</h1>
@@ -153,57 +150,72 @@ function ProfileContent() {
           education, work, project, and skill details are included as context in AI requests.
         </p>
 
-        <form
-          onSubmit={saveProfile}
-          onChange={() => setProfileSaved(false)}
-          className="space-y-5 rounded-xl bg-white p-6 shadow"
-        >
-          {[
-            ["education", "Education", "Institution, qualification, subject, or learning goal"],
-            ["work_history", "Work experience", "Role, organization, responsibilities, or experience"],
-            ["projects", "Projects and interests", "Project descriptions or areas you want to explore"],
-            ["skills", "Skills", "One skill per line"],
-            ["bookmarks", "Learning bookmarks", "One per line: Title | https://example.com"],
-          ].map(([name, label, placeholder]) => (
-            <label key={name} className="block space-y-2">
-              <span className="font-semibold">{label}</span>
-              <textarea
-                name={name}
-                rows={name === "bookmarks" ? 3 : 4}
-                defaultValue={
-                  name === "education" ? listText(profile.education)
-                    : name === "work_history" ? listText(profile.work_history)
-                      : name === "projects" ? listText(profile.projects)
-                        : name === "skills" ? listText(profile.skills)
-                          : bookmarkText
-                }
-                placeholder={placeholder}
-                className="w-full rounded border p-3"
-              />
-            </label>
-          ))}
-          {error && <p role="alert" className="text-red-700">{error}</p>}
-          {message && <p role="status" className="text-green-700">{message}</p>}
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full rounded bg-blue-600 p-3 font-semibold text-white disabled:bg-blue-300"
-          >
-            {saving ? "Saving..." : "Save profile"}
-          </button>
-          {profileSaved && (
-            <div className="rounded-lg bg-green-50 p-4 text-green-900">
-              <p role="status">Profile saved. Regenerate recommendations to use these updates.</p>
+        <AnalyticsDashboard />
+
+        <section aria-labelledby="profile-details-heading" className="space-y-5">
+          <h2 id="profile-details-heading" className="text-2xl font-bold">
+            Profile details
+          </h2>
+          {loading ? (
+            <p className="rounded-xl bg-white p-6 text-gray-600 shadow" role="status">
+              Loading your profile...
+            </p>
+          ) : (
+            <form
+              onSubmit={saveProfile}
+              onChange={() => setProfileSaved(false)}
+              className="space-y-5 rounded-xl bg-white p-6 shadow"
+            >
+              {[
+                ["education", "Education", "Institution, qualification, subject, or learning goal"],
+                ["work_history", "Work experience", "Role, organization, responsibilities, or experience"],
+                ["projects", "Projects and interests", "Project descriptions or areas you want to explore"],
+                ["skills", "Skills", "One skill per line"],
+                ["bookmarks", "Learning bookmarks", "One per line: Title | https://example.com"],
+              ].map(([name, label, placeholder]) => (
+                <label key={name} className="block space-y-2">
+                  <span className="font-semibold">{label}</span>
+                  <textarea
+                    name={name}
+                    rows={name === "bookmarks" ? 3 : 4}
+                    defaultValue={
+                      name === "education" ? listText(profile.education)
+                        : name === "work_history" ? listText(profile.work_history)
+                          : name === "projects" ? listText(profile.projects)
+                            : name === "skills" ? listText(profile.skills)
+                              : bookmarkText
+                    }
+                    placeholder={placeholder}
+                    className="w-full rounded border p-3"
+                  />
+                </label>
+              ))}
+              {error && <p role="alert" className="text-red-700">{error}</p>}
+              {message && <p role="status" className="text-green-700">{message}</p>}
               <button
-                type="button"
-                onClick={() => router.push("/recommendations?generate=1")}
-                className="mt-3 rounded-lg bg-green-800 px-4 py-2 font-semibold text-white hover:bg-green-900"
+                type="submit"
+                disabled={saving}
+                className="w-full rounded bg-blue-600 p-3 font-semibold text-white disabled:bg-blue-300"
               >
-                Generate updated recommendations
+                {saving ? "Saving..." : "Save profile"}
               </button>
-            </div>
+              {profileSaved && (
+                <div className="rounded-lg bg-green-50 p-4 text-green-900">
+                  <p role="status">
+                    Profile saved. Regenerate recommendations to use these updates.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/recommendations?generate=1")}
+                    className="mt-3 rounded-lg bg-green-800 px-4 py-2 font-semibold text-white hover:bg-green-900"
+                  >
+                    Generate updated recommendations
+                  </button>
+                </div>
+              )}
+            </form>
           )}
-        </form>
+        </section>
       </div>
     </main>
   );
