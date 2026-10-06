@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, responseError } from "../../lib/api";
-import { useSessionStorageValue } from "../../lib/session";
+import { saveSessionStorageValue, useSessionStorageValue } from "../../lib/session";
 
 type DiagnosticQuestion = {
   id: string;
@@ -83,7 +83,7 @@ export default function AssessmentPage() {
       });
       if (!res.ok) throw new Error(await responseError(res));
       const data = await res.json();
-      window.sessionStorage.setItem("tutorRoadmap", JSON.stringify(data));
+      saveSessionStorageValue("tutorRoadmap", JSON.stringify(data));
       router.push("/roadmap");
     } catch (error) {
       console.error("Failed to submit answers:", error);
