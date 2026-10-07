@@ -274,7 +274,7 @@ export default function Home() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-7 md:grid-cols-2 xl:grid-cols-2">
                 {recommendations.map((item) => (
                   <article
                     key={item.id}
@@ -286,7 +286,7 @@ export default function Home() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={`Watch ${item.title} on YouTube`}
-                        className="relative block aspect-video bg-slate-100"
+                        className="relative block aspect-[16/8] bg-slate-100"
                       >
                         <Image
                           src={item.thumbnail_url}
@@ -298,22 +298,22 @@ export default function Home() {
                         />
                       </a>
                     ) : (
-                      <div className="flex h-12 items-center border-b border-slate-100 px-5">
+                      <div className="flex h-14 items-center border-b border-slate-100 px-6">
                         <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase text-blue-800">
                           {item.type === "youtube" ? "YouTube tutorial" : "Web article"}
                         </span>
                       </div>
                     )}
-                    <div className="flex flex-1 flex-col p-5">
+                    <div className="flex flex-1 flex-col p-6">
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-lg font-bold leading-snug">{item.title}</h3>
+                        <h3 className="text-xl font-bold leading-snug text-slate-900">{item.title}</h3>
                         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase ${
                           item.type === "youtube" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
                         }`}>
                           {item.type === "youtube" ? "Video" : "Article"}
                         </span>
                       </div>
-                      <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-slate-600">
+                      <p className="mt-3 line-clamp-4 text-base leading-relaxed text-slate-600">
                         {item.description || "Open this resource to view the learning material."}
                       </p>
                       <div className="mt-auto flex items-center justify-between gap-3 pt-5">
@@ -324,7 +324,7 @@ export default function Home() {
                           href={item.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+                          className="shrink-0 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
                         >
                           {item.type === "youtube" ? "Watch tutorial" : "Read article"}
                         </a>
