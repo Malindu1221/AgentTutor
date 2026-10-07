@@ -134,23 +134,23 @@ function ResourceList({
   if (resources.length === 0) return null;
   const linkColor = accent === "red" ? "text-red-700" : "text-blue-700";
   return (
-    <section className="mt-5 border-t border-gray-100 pt-4">
-      <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-gray-800">
+    <section className="mt-6 border-t border-slate-200 pt-5">
+      <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-800">
         {heading}
       </h3>
       <ul className="space-y-3">
         {resources.map((resource, index) => (
-          <li key={`${resource.url}-${index}`} className="rounded-lg bg-gray-50 p-3">
+          <li key={`${resource.url}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <a
               href={resource.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${linkColor} font-semibold hover:underline`}
+              className={`${linkColor} font-semibold transition hover:underline`}
             >
               {resource.title}
             </a>
             {resource.description && (
-              <p className="mt-1 text-sm text-gray-600">{resource.description}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">{resource.description}</p>
             )}
           </li>
         ))}
@@ -174,25 +174,28 @@ export default function RoadmapPage() {
   if (!result) return null;
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 text-gray-900 md:p-12">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <header className="rounded-xl bg-white p-6 text-center shadow">
-          <h1 className="mb-2 text-3xl font-bold text-blue-700">
+    <main className="min-h-screen bg-slate-200 px-4 py-8 text-slate-900 md:px-8 md:py-12">
+      <div className="mx-auto w-full max-w-6xl space-y-8">
+        <header className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-7 text-center text-white shadow-2xl shadow-slate-900/15 md:p-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-200">
+            Personalized learning roadmap
+          </p>
+          <h1 className="mb-3 mt-2 text-3xl font-bold tracking-tight md:text-4xl">
             Your Custom Learning Path
           </h1>
-          <p className="text-lg">
+          <p className="text-lg text-slate-200">
             Difficulty level:{" "}
-            <span className="font-semibold uppercase">{result.evaluation.difficulty}</span>
+            <span className="font-semibold uppercase text-white">{result.evaluation.difficulty}</span>
           </p>
           {result.evaluation.manual ? (
-            <p className="text-gray-600">Level selected by you</p>
+            <p className="mt-1 text-slate-300">Level selected by you</p>
           ) : (
-            <p className="text-gray-600">
+            <p className="mt-1 text-slate-300">
               Diagnostic score: {result.evaluation.score}/{result.evaluation.total} (
               {result.evaluation.percentage.toFixed(0)}%)
             </p>
           )}
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-3 text-sm text-blue-200">
             {result.roadmap.length} learning steps ·{" "}
             {result.roadmap.reduce((total, step) => total + step.estimated_time_hours, 0)} estimated hours
           </p>
@@ -202,29 +205,29 @@ export default function RoadmapPage() {
           {result.roadmap.map((step, index) => (
             <li
               key={step.id}
-              className="rounded-r-xl border-l-4 border-blue-600 bg-white p-6 shadow-sm"
+              className="rounded-2xl border border-gray-300 bg-white p-6 shadow-2xl shadow-slate-900/10 md:p-8"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-blue-800">
                     Step {index + 1}
                   </p>
-                  <h2 className="mt-1 text-xl font-bold">{step.title}</h2>
+                  <h2 className="mt-1 text-xl font-bold text-slate-900 md:text-2xl">{step.title}</h2>
                 </div>
-                <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-900">
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-950">
                   {step.estimated_time_hours} hours
                 </span>
               </div>
-              <p className="mt-3 leading-relaxed text-gray-700">{step.description}</p>
+              <p className="mt-4 text-base leading-relaxed text-slate-700">{step.description}</p>
 
               {step.prereq.length > 0 && (
-                <p className="mt-3 text-sm text-gray-600">
+                <p className="mt-4 text-sm text-slate-600">
                   Prerequisites: {step.prereq.join(", ")}
                 </p>
               )}
 
               {step.step_explanation && (
-                <div className="mt-4 rounded-r-lg border-l-2 border-blue-400 bg-blue-50 p-3 text-sm text-blue-950">
+                <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-relaxed text-blue-950">
                   <span className="font-semibold">Why this step? </span>
                   {step.step_explanation}
                 </div>
@@ -251,7 +254,7 @@ export default function RoadmapPage() {
               window.sessionStorage.removeItem("tutorSession");
               window.sessionStorage.removeItem("tutorRoadmap");
             }}
-            className="flex-1 rounded-lg bg-gray-900 py-4 text-center font-bold text-white hover:bg-gray-800"
+            className="flex-1 rounded-xl bg-slate-900 px-6 py-4 text-center font-semibold text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-slate-800"
           >
             Start a New Topic
           </Link>
