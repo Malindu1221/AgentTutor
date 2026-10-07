@@ -143,9 +143,9 @@ export default function Home() {
 
   return (
     <AuthGuard>
-      <main className="min-h-screen bg-slate-50 px-5 py-10 text-slate-900 md:px-10">
-        <div className="mx-auto max-w-7xl space-y-10">
-          <section className="mx-auto w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-xl shadow-slate-900/5 sm:p-10">
+      <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 md:px-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <section className="mx-auto w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-2xl shadow-slate-900/5 sm:p-12">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-800">
               Your learning journey
             </p>
@@ -165,7 +165,7 @@ export default function Home() {
                 type="text"
                 required
                 maxLength={500}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-5 py-4 text-base text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-5 py-5 text-base text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
                 placeholder="e.g., learn python programming"
                 value={query}
                 onChange={(event) => {
@@ -217,8 +217,8 @@ export default function Home() {
             </form>
           </section>
 
-          <section className="space-y-6">
-            <header className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
+          <section className="space-y-6 rounded-3xl border border-slate-200 bg-slate-100/70 px-4 py-8 md:px-8 md:py-10">
+            <header className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-800">
                   Keep exploring
@@ -276,7 +276,7 @@ export default function Home() {
                 {recommendations.map((item) => (
                   <article
                     key={item.id}
-                    className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-xl shadow-slate-900/5 ring-1 ring-slate-200 transition duration-200 hover:-translate-y-1 hover:shadow-2xl"
+                    className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5 transition duration-200 hover:-translate-y-1 hover:shadow-2xl"
                   >
                     {item.type === "youtube" && item.thumbnail_url ? (
                       <a
