@@ -66,25 +66,25 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <section className="flex min-h-[calc(100vh-2rem)] w-full items-center justify-center rounded-2xl bg-white p-8 lg:w-1/2 lg:px-16">
-        <div className="w-full max-w-md">
-          <Link href="/" className="mb-10 inline-flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-lg font-bold text-white shadow-lg shadow-blue-700/20">
+      <section className="flex min-h-[calc(100vh-2rem)] w-full items-center justify-center rounded-2xl bg-white p-8 lg:w-1/2 lg:px-12">
+        <div className="w-full max-w-xl px-6">
+          <Link href="/" className="mb-12 inline-flex items-center gap-3">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-xl font-bold text-white shadow-lg shadow-blue-700/20">
               A
             </span>
-            <span className="bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
+            <span className="bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
               AgentTutor
             </span>
           </Link>
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Welcome back</h1>
-            <p className="mt-3 text-gray-500">Sign in to continue your learning journey.</p>
+          <div className="mb-10">
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Welcome back</h1>
+            <p className="mt-4 text-base text-gray-500 sm:text-lg">Sign in to continue your learning journey.</p>
           </div>
 
-          <form onSubmit={submit} className="space-y-5">
-            <label className="block space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Email</span>
+          <form onSubmit={submit} className="space-y-6">
+            <label className="block space-y-2.5">
+              <span className="text-base font-semibold text-gray-700">Email</span>
               <input
                 type="email"
                 autoComplete="email"
@@ -95,11 +95,11 @@ export default function LoginPage() {
                   setEmail(event.target.value);
                   setError("");
                 }}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-600/10"
+                className="w-full rounded-xl border border-gray-300 bg-gray-50 px-5 py-5 text-lg text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Password</span>
+            <label className="block space-y-2.5">
+              <span className="text-base font-semibold text-gray-700">Password</span>
               <input
                 type="password"
                 autoComplete="current-password"
@@ -111,26 +111,26 @@ export default function LoginPage() {
                   setPassword(event.target.value);
                   setError("");
                 }}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-600/10"
+                className="w-full rounded-xl border border-gray-300 bg-gray-50 px-5 py-5 text-lg text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </label>
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-slate-900 to-blue-950 px-4 py-3.5 font-semibold text-white shadow-lg shadow-slate-900/15 transition-transform duration-200 hover:scale-[1.02] hover:from-blue-950 hover:to-indigo-950 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+              className="w-full rounded-xl bg-gradient-to-r from-slate-900 to-blue-950 px-5 py-4 text-lg font-semibold text-white shadow-lg shadow-slate-900/15 transition-transform duration-200 hover:scale-[1.02] hover:from-blue-950 hover:to-indigo-950 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
             >
               {loading ? "Logging in..." : "Log in"}
             </button>
           </form>
 
-          <p className="mt-7 text-center text-sm text-gray-600">
+          <p className="mt-8 text-center text-base text-gray-600">
             Need an account?{" "}
             <Link className="font-semibold text-blue-700 hover:text-indigo-700" href="/register">
               Register
             </Link>
           </p>
-          <Link className="mt-5 block text-center text-sm text-gray-500 hover:text-gray-800" href="/">
+          <Link className="mt-6 block text-center text-base text-gray-500 hover:text-gray-800" href="/">
             Back to learning
           </Link>
         </div>
