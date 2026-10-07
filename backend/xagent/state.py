@@ -9,7 +9,7 @@ class AgentTutorState(TypedDict):
     learning_style: str
     
     # Data from Orchestrator (Phase 2)
-    base_roadmap: List[Dict[str, Any]]
+    base_roadmap: NotRequired[List[Dict[str, Any]]]
     user_profile: NotRequired[Dict[str, Any]]
     evaluation: NotRequired[Dict[str, Any]]
     
