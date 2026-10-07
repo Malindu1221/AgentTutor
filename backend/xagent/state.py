@@ -22,4 +22,5 @@ class AgentTutorState(TypedDict):
     refined_roadmap: NotRequired[List[Dict[str, Any]]]
     final_recommendations: NotRequired[Dict[str, Any]]
     review_required: NotRequired[bool]
+    verification_retries: NotRequired[int]
     status_message: NotRequired[str]
