@@ -136,17 +136,17 @@ export default function AnalyticsDashboard() {
 
   return (
     <section aria-labelledby="analytics-heading" className="space-y-5">
-      <header>
-        <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">
+      <header className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10">
+        <p className="text-sm font-semibold uppercase tracking-widest text-blue-800">
           Your learning activity
         </p>
-        <h2 id="analytics-heading" className="mt-1 text-2xl font-bold">
+        <h2 id="analytics-heading" className="mt-1 text-2xl font-bold text-slate-900">
           Progress &amp; Analytics
         </h2>
       </header>
 
       {loading ? (
-        <p className="rounded-xl bg-white p-6 text-gray-600 shadow-sm" role="status">
+        <p className="rounded-2xl border border-gray-300 bg-white p-6 text-slate-600 shadow-xl" role="status">
           Loading your learning analytics...
         </p>
       ) : error || !analytics ? (
@@ -158,7 +158,7 @@ export default function AnalyticsDashboard() {
               setLoading(true);
               setRetry((current) => current + 1);
             }}
-            className="mt-3 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800"
+            className="mt-3 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white shadow-md transition-all hover:bg-slate-800"
           >
             Try again
           </button>
@@ -169,32 +169,32 @@ export default function AnalyticsDashboard() {
             {metrics.map((metric) => (
               <article
                 key={metric.label}
-                className={`rounded-2xl border-l-4 ${metric.accent} bg-white p-5 shadow-sm`}
+                className={`rounded-2xl border border-gray-300 border-l-4 ${metric.accent} bg-white p-6 shadow-xl shadow-slate-900/10`}
               >
-                <p className="text-sm font-semibold text-gray-600">{metric.label}</p>
-                <p className="mt-3 text-3xl font-bold">{metric.value}</p>
-                <p className="mt-2 text-sm text-gray-500">{metric.detail}</p>
+                <p className="text-sm font-semibold text-slate-600">{metric.label}</p>
+                <p className="mt-3 text-3xl font-bold text-slate-900">{metric.value}</p>
+                <p className="mt-2 text-sm text-slate-500">{metric.detail}</p>
               </article>
             ))}
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+          <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
-                <h3 className="text-xl font-bold">Recent assessment scores</h3>
-                <p className="mt-1 text-sm text-gray-600">
+                <h3 className="text-xl font-bold text-slate-900">Recent assessment scores</h3>
+                <p className="mt-1 text-sm text-slate-600">
                   Most recent completed roadmap assessments.
                 </p>
               </div>
               {analytics.recent_scores.length > 0 && (
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm font-medium text-slate-600">
                   Average: {analytics.average_score}%
                 </p>
               )}
             </div>
 
             {analytics.recent_scores.length === 0 ? (
-              <p className="mt-6 rounded-lg bg-gray-50 p-5 text-gray-600">
+              <p className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-slate-600">
                 Complete a learning-path assessment to see your score history here.
               </p>
             ) : (
@@ -210,18 +210,18 @@ export default function AnalyticsDashboard() {
                         : `Attempt ${index + 1}`}
                     </span>
                     <div
-                      className="h-3 overflow-hidden rounded-full bg-gray-100"
+                      className="h-3 overflow-hidden rounded-full bg-slate-200"
                       role="img"
                       aria-label={`Assessment score ${assessment.percentage}%`}
                     >
                       <div
-                        className="h-full rounded-full bg-blue-600"
+                        className="h-full rounded-full bg-gradient-to-r from-slate-900 to-blue-700"
                         style={{
                           width: `${Math.max(0, Math.min(100, assessment.percentage))}%`,
                         }}
                       />
                     </div>
-                    <span className="text-right text-sm font-semibold">
+                    <span className="text-right text-sm font-semibold text-slate-800">
                       {assessment.score}/{assessment.total}
                     </span>
                   </div>
