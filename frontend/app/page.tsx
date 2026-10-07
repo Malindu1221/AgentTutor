@@ -1,17 +1,101 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch, responseError } from "../lib/api";
+import { apiFetch, clearAccessToken, responseError } from "../lib/api";
 import { saveSessionStorageValue } from "../lib/session";
 import AuthGuard from "../components/auth-guard";
+
+type Recommendation = {
+  id: string;
+  type: "youtube" | "web";
+  title: string;
+  description: string;
+  url: string;
+  thumbnail_url: string | null;
+  published_at: string | null;
+  topic: string;
+  relevance_score: number;
+};
+
+type RecommendationResponse = {
+  recommendations: Recommendation[];
+  generated_at: string | null;
+};
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const [topicConfirmed, setTopicConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [recommendationsGenerating, setRecommendationsGenerating] = useState(false);
+  const [recommendationsError, setRecommendationsError] = useState("");
   const router = useRouter();
+
+  const loadRecommendations = useCallback(async () => {
+    const response = await apiFetch("/recommendations");
+    if (response.status === 401) {
+      clearAccessToken();
+      router.replace("/login");
+      return;
+    }
+    if (!response.ok) throw new Error(await responseError(response));
+    const result: RecommendationResponse = await response.json();
+    setRecommendations(result.recommendations);
+  }, [router]);
+
+  const generateRecommendations = async () => {
+    setRecommendationsGenerating(true);
+    setRecommendationsError("");
+    try {
+      const response = await apiFetch("/recommendations/generate", {
+        method: "POST",
+      });
+      if (response.status === 401) {
+        clearAccessToken();
+        router.replace("/login");
+        return;
+      }
+      if (!response.ok) throw new Error(await responseError(response));
+      const result: RecommendationResponse = await response.json();
+      setRecommendations(result.recommendations);
+    } catch (generateError) {
+      setRecommendationsError(
+        generateError instanceof Error
+          ? generateError.message
+          : "Could not generate recommendations.",
+      );
+    } finally {
+      setRecommendationsGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void loadRecommendations()
+        .catch((loadError: unknown) => {
+          if (active) {
+            setRecommendationsError(
+              loadError instanceof Error
+                ? loadError.message
+                : "Could not load recommendations.",
+            );
+          }
+        })
+        .finally(() => {
+          if (active) setRecommendationsLoading(false);
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [loadRecommendations]);
 
   const confirmTopic = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -59,69 +143,196 @@ export default function Home() {
 
   return (
     <AuthGuard>
-      <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-50">
-        <div className="max-w-xl w-full space-y-8 p-10 bg-white rounded-xl shadow-md text-center">
-          <h1 className="text-3xl font-bold text-gray-900">What do you want to learn?</h1>
-          <form onSubmit={confirmTopic} className="space-y-4">
-            <label htmlFor="learning-topic" className="sr-only">
-              Topic you want to learn
-            </label>
-            <input
-              id="learning-topic"
-              name="query"
-              type="text"
-              required
-              maxLength={500}
-              className="w-full rounded-lg border border-gray-300 p-4 text-black focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., learn python programming"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setTopicConfirmed(false);
-                setError("");
-              }}
-            />
-            {!topicConfirmed && (
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-blue-600 px-6 py-4 font-semibold text-white hover:bg-blue-700"
-              >
-                Continue
-              </button>
-            )}
-            {topicConfirmed && (
-              <div className="space-y-5 pt-2 text-left">
-                <fieldset className="space-y-3">
-                  <legend className="font-semibold text-gray-900">How would you like to choose your level?</legend>
-                  <button
-                    type="button"
-                    onClick={() => void startSession()}
-                    disabled={loading}
-                    className="w-full rounded-lg border border-blue-600 px-5 py-4 text-left font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-60"
-                  >
-                    {loading ? "Starting..." : "Take a quick quiz to find my level"}
-                  </button>
-                </fieldset>
-                <fieldset className="space-y-3">
-                  <legend className="font-semibold text-gray-900">I know my level</legend>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {(["beginner", "intermediate", "advanced"] as const).map((level) => (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() => void startSession(level)}
-                        disabled={loading}
-                        className="rounded-lg bg-gray-100 px-4 py-3 font-semibold capitalize text-gray-900 hover:bg-gray-200 disabled:opacity-60"
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
+      <main className="min-h-screen bg-slate-50 px-5 py-10 text-slate-900 md:px-10">
+        <div className="mx-auto max-w-7xl space-y-10">
+          <section className="mx-auto w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-xl shadow-slate-900/5 sm:p-10">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-800">
+              Your learning journey
+            </p>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              What do you want to learn?
+            </h1>
+            <p className="mt-3 text-slate-600">
+              Tell us a subject and we’ll help you find the right path.
+            </p>
+            <form onSubmit={confirmTopic} className="mt-7 space-y-4">
+              <label htmlFor="learning-topic" className="sr-only">
+                Topic you want to learn
+              </label>
+              <input
+                id="learning-topic"
+                name="query"
+                type="text"
+                required
+                maxLength={500}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-5 py-4 text-base text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                placeholder="e.g., learn python programming"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setTopicConfirmed(false);
+                  setError("");
+                }}
+              />
+              {!topicConfirmed && (
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800"
+                >
+                  Continue
+                </button>
+              )}
+              {topicConfirmed && (
+                <div className="space-y-5 pt-2 text-left">
+                  <fieldset className="space-y-3">
+                    <legend className="font-semibold text-slate-900">How would you like to choose your level?</legend>
+                    <button
+                      type="button"
+                      onClick={() => void startSession()}
+                      disabled={loading}
+                      className="w-full rounded-xl border border-slate-300 px-5 py-4 text-left font-semibold text-slate-800 transition hover:border-blue-500 hover:bg-blue-50 disabled:opacity-60"
+                    >
+                      {loading ? "Starting..." : "Take a quick quiz to find my level"}
+                    </button>
+                  </fieldset>
+                  <fieldset className="space-y-3">
+                    <legend className="font-semibold text-slate-900">I know my level</legend>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {(["beginner", "intermediate", "advanced"] as const).map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => void startSession(level)}
+                          disabled={loading}
+                          className="rounded-xl bg-slate-100 px-4 py-3 font-semibold capitalize text-slate-800 transition hover:bg-slate-200 disabled:opacity-60"
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                </div>
+              )}
+              {error && <p role="alert" className="text-left text-red-700">{error}</p>}
+            </form>
+          </section>
+
+          <section className="space-y-6">
+            <header className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-800">
+                  Keep exploring
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+                  Personalized Recommendations
+                </h2>
+                <p className="mt-2 text-slate-600">
+                  Tutorials and articles picked to support your learning.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/profile"
+                  className="rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-800 transition hover:bg-slate-50"
+                >
+                  Edit profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void generateRecommendations()}
+                  disabled={recommendationsGenerating}
+                  className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white shadow-md transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {recommendationsGenerating ? "Finding resources..." : "Refresh"}
+                </button>
+              </div>
+            </header>
+
+            {recommendationsError && (
+              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+                {recommendationsError}
               </div>
             )}
-            {error && <p role="alert" className="text-left text-red-700">{error}</p>}
-          </form>
+
+            {recommendationsLoading ? (
+              <p role="status" className="rounded-2xl bg-white py-12 text-center text-slate-600 shadow-sm">
+                Loading your recommendations...
+              </p>
+            ) : recommendations.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+                <h3 className="text-xl font-semibold">No recommendations yet</h3>
+                <p className="mx-auto mt-2 max-w-xl text-slate-600">
+                  Add your education, skills, or interests to your profile, then generate recommendations tailored to you.
+                </p>
+                <Link
+                  href="/profile"
+                  className="mt-5 inline-flex rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Complete profile
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {recommendations.map((item) => (
+                  <article
+                    key={item.id}
+                    className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-xl shadow-slate-900/5 ring-1 ring-slate-200 transition duration-200 hover:-translate-y-1 hover:shadow-2xl"
+                  >
+                    {item.type === "youtube" && item.thumbnail_url ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Watch ${item.title} on YouTube`}
+                        className="relative block aspect-video bg-slate-100"
+                      >
+                        <Image
+                          src={item.thumbnail_url}
+                          alt=""
+                          fill
+                          unoptimized
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover"
+                        />
+                      </a>
+                    ) : (
+                      <div className="flex h-12 items-center border-b border-slate-100 px-5">
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase text-blue-800">
+                          {item.type === "youtube" ? "YouTube tutorial" : "Web article"}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex flex-1 flex-col p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="text-lg font-bold leading-snug">{item.title}</h3>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase ${
+                          item.type === "youtube" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                        }`}>
+                          {item.type === "youtube" ? "Video" : "Article"}
+                        </span>
+                      </div>
+                      <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-slate-600">
+                        {item.description || "Open this resource to view the learning material."}
+                      </p>
+                      <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+                        <span className="truncate text-xs text-slate-500" title={item.topic}>
+                          For: {item.topic}
+                        </span>
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+                        >
+                          {item.type === "youtube" ? "Watch tutorial" : "Read article"}
+                        </a>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </main>
     </AuthGuard>
