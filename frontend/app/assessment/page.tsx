@@ -95,9 +95,9 @@ export default function AssessmentPage() {
   if (!sessionData) return null;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 md:px-8 md:py-12">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 md:p-8">
+    <main className="min-h-screen bg-slate-50 px-2 py-8 text-slate-900 sm:px-4 md:py-12">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 sm:px-6 lg:px-12">
+        <header className="rounded-2xl border border-slate-200 bg-white p-7 shadow-lg shadow-slate-900/5 md:p-10">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-800">
             Personalized learning path
           </p>
@@ -115,16 +115,16 @@ export default function AssessmentPage() {
         {sessionData.mcqs.map((mcq) => (
           <section
             key={mcq.id}
-            className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-lg shadow-slate-900/5 md:p-8"
+            className="mb-6 rounded-2xl border border-gray-100 bg-white p-7 shadow-lg shadow-slate-900/5 md:p-10"
           >
-            <h2 className="mb-5 text-lg font-semibold leading-relaxed text-gray-800">
+            <h2 className="mb-5 text-lg font-semibold leading-relaxed text-gray-800 md:text-xl">
               {mcq.question}
             </h2>
             <div className="space-y-2">
               {mcq.options.map((opt, idx) => (
                 <label
                   key={idx}
-                  className="flex cursor-pointer items-center gap-3 rounded-xl p-3 transition-colors hover:bg-gray-50 has-[:checked]:bg-blue-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl p-4 transition-colors hover:bg-gray-50 has-[:checked]:bg-blue-50"
                 >
                   <input
                     type="radio"
