@@ -218,7 +218,7 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-12">
+        <div className="mx-auto w-full max-w-[90rem] px-4 py-10 md:px-8 md:py-12">
           <section className="space-y-6">
             <header className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:flex-row sm:items-center">
               <div>
@@ -274,7 +274,7 @@ export default function Home() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-7 md:grid-cols-2 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {recommendations.map((item) => (
                   <article
                     key={item.id}
