@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 
 :root {
   --background: #ffffff;
@@ -23,4 +24,61 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.markdown-content p {
+  margin-block: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  margin-block: 1rem 0.5rem;
+  font-weight: 700;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-block: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.markdown-content ul {
+  list-style: disc;
+}
+
+.markdown-content ol {
+  list-style: decimal;
+}
+
+.markdown-content blockquote {
+  margin-block: 0.75rem;
+  border-left: 3px solid #9ca3af;
+  padding-left: 0.75rem;
+  color: #4b5563;
+}
+
+.markdown-content pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #e5e7eb;
+  padding: 0.75rem;
+}
+
+.markdown-content code {
+  border-radius: 0.25rem;
+  background: #e5e7eb;
+  padding: 0.1rem 0.25rem;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.5rem;
 }
