@@ -2,6 +2,8 @@ import io
 import json
 import logging
 import re
+import uuid
+from datetime import datetime, timezone
 from typing import Annotated, Any, Iterator
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -11,6 +13,14 @@ from pypdf import PdfReader
 
 from auth import get_current_user
 from services.llm_client import call_groq, open_groq_stream
+from services.pdf_session_store import (
+    append_pdf_messages,
+    create_pdf_session,
+    get_pdf_session,
+    list_pdf_sessions,
+)
+from langchain_core.messages import AIMessage, HumanMessage
+from xagent.pdf_chat_graph import pdf_chat_graph
 
 router = APIRouter(prefix="/api/pdf", tags=["PDF study assistant"])
 logger = logging.getLogger(__name__)
@@ -29,6 +39,10 @@ class AskQuestionRequest(BaseModel):
         max_length=20,
     )
     question: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS)
+
+
+class PDFChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS)
 
 
 def _split_text(text: str, chunk_size: int = CHUNK_CHARS) -> list[str]:
@@ -203,10 +217,92 @@ def _stream_answer_events(stream: Any) -> Iterator[str]:
             close()
 
 
+def _stream_pdf_chat(
+    session_id: str,
+    user_id: str,
+    session: dict[str, Any],
+    message: str,
+) -> Iterator[str]:
+    user_message_id = str(uuid.uuid4())
+    assistant_message_id = str(uuid.uuid4())
+    previous_messages = [
+        (
+            HumanMessage(id=item["message_id"], content=item["content"])
+            if item["role"] == "user"
+            else AIMessage(id=item["message_id"], content=item["content"])
+        )
+        for item in session["messages"]
+        if item.get("role") in {"user", "assistant"}
+        and isinstance(item.get("message_id"), str)
+        and isinstance(item.get("content"), str)
+    ]
+    current_message = HumanMessage(id=user_message_id, content=message)
+    accumulated_answer: list[str] = []
+    try:
+        graph_input = {
+            "messages": [*previous_messages, current_message],
+            "extracted_text": session["extracted_text"],
+            "response_id": assistant_message_id,
+        }
+        graph_config = {"configurable": {"thread_id": session_id}}
+        for event in pdf_chat_graph.stream(
+            graph_input,
+            config=graph_config,
+            stream_mode="custom",
+        ):
+            if (
+                isinstance(event, dict)
+                and event.get("type") == "token"
+                and isinstance(event.get("content"), str)
+            ):
+                accumulated_answer.append(event["content"])
+                yield f"event: token\ndata: {json.dumps(event['content'])}\n\n"
+
+        answer = "".join(accumulated_answer).strip()
+        if not answer:
+            raise RuntimeError("The PDF assistant returned an empty answer.")
+
+        now = datetime.now(timezone.utc).isoformat()
+        saved = append_pdf_messages(
+            session_id,
+            user_id,
+            [
+                {
+                    "message_id": user_message_id,
+                    "role": "user",
+                    "content": message,
+                    "created_at": now,
+                },
+                {
+                    "message_id": assistant_message_id,
+                    "role": "assistant",
+                    "content": answer,
+                    "created_at": now,
+                },
+            ],
+        )
+        if not saved:
+            yield (
+                "event: error\n"
+                f"data: {json.dumps({'detail': 'PDF session was not found.'})}\n\n"
+            )
+            return
+        yield (
+            "event: complete\n"
+            f"data: {json.dumps({'assistant_message_id': assistant_message_id})}\n\n"
+        )
+    except Exception:
+        logger.exception("Failed to answer PDF chat message for session %s", session_id)
+        yield (
+            "event: error\n"
+            f"data: {json.dumps({'detail': 'Could not finish the answer. Please try again.'})}\n\n"
+        )
+
+
 @router.post("/upload")
 def upload_pdf(
     file: Annotated[UploadFile, File()],
-    _user: dict[str, str] = Depends(get_current_user),
+    user: dict[str, str] = Depends(get_current_user),
 ) -> dict[str, Any]:
     if file.filename is None or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
@@ -282,7 +378,74 @@ def upload_pdf(
             detail="Groq could not analyze the PDF. Please try again.",
         ) from exc
 
-    return {**analysis, "chunks": chunks}
+    filename = file.filename.replace("\\", "/").rsplit("/", 1)[-1][:255]
+    session_id = str(uuid.uuid4())
+    session = create_pdf_session(
+        session_id,
+        user["id"],
+        filename,
+        document_text,
+    )
+    return {**analysis, "chunks": chunks, **session}
+
+
+@router.get("/sessions")
+def get_pdf_sessions(
+    user: dict[str, str] = Depends(get_current_user),
+) -> list[dict[str, str]]:
+    return list_pdf_sessions(user["id"])
+
+
+@router.get("/sessions/{session_id}")
+def get_pdf_session_history(
+    session_id: str,
+    user: dict[str, str] = Depends(get_current_user),
+) -> dict[str, Any]:
+    session = get_pdf_session(session_id, user["id"])
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF session not found.",
+        )
+    return {
+        "session_id": session["session_id"],
+        "pdf_filename": session["pdf_filename"],
+        "created_at": session["created_at"],
+        "messages": session["messages"],
+    }
+
+
+@router.post("/sessions/{session_id}/chat")
+def chat_with_pdf_session(
+    session_id: str,
+    request: PDFChatRequest,
+    user: dict[str, str] = Depends(get_current_user),
+) -> StreamingResponse:
+    message = request.message.strip()
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Enter a question about the PDF.",
+        )
+    session = get_pdf_session(session_id, user["id"])
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF session not found.",
+        )
+    context_chunks = _select_relevant_chunks(
+        _split_text(session["extracted_text"]),
+        message,
+    )
+    session["extracted_text"] = "\n\n".join(
+        f"<document_section index=\"{index}\">\n{chunk}\n</document_section>"
+        for index, chunk in enumerate(context_chunks, start=1)
+    )
+    return StreamingResponse(
+        _stream_pdf_chat(session_id, user["id"], session, message),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/ask")
