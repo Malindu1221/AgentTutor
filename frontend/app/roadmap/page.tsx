@@ -31,6 +31,7 @@ type RoadmapResult = {
     total: number;
     percentage: number;
     difficulty: string;
+    manual: boolean;
   };
   roadmap: RoadmapStep[];
 };
@@ -112,6 +113,7 @@ function parseRoadmapResult(value: string | null): RoadmapResult | null {
         total: evaluation.total,
         percentage: evaluation.percentage,
         difficulty: evaluation.difficulty,
+        manual: evaluation.manual === true,
       },
       roadmap,
     };
@@ -182,10 +184,14 @@ export default function RoadmapPage() {
             Difficulty level:{" "}
             <span className="font-semibold uppercase">{result.evaluation.difficulty}</span>
           </p>
-          <p className="text-gray-600">
-            Diagnostic score: {result.evaluation.score}/{result.evaluation.total} (
-            {result.evaluation.percentage.toFixed(0)}%)
-          </p>
+          {result.evaluation.manual ? (
+            <p className="text-gray-600">Level selected by you</p>
+          ) : (
+            <p className="text-gray-600">
+              Diagnostic score: {result.evaluation.score}/{result.evaluation.total} (
+              {result.evaluation.percentage.toFixed(0)}%)
+            </p>
+          )}
           <p className="mt-1 text-sm text-gray-500">
             {result.roadmap.length} learning steps ·{" "}
             {result.roadmap.reduce((total, step) => total + step.estimated_time_hours, 0)} estimated hours

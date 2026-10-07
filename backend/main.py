@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
@@ -28,6 +30,7 @@ app.include_router(recommendation_router)
 class StartSessionRequest(BaseModel):
     query: str = Field(min_length=1, max_length=500)
     user_id: str = "guest"
+    manual_level: Literal["beginner", "intermediate", "advanced"] | None = None
 
     @field_validator("query")
     @classmethod
@@ -50,9 +53,9 @@ def api_start_session(
     req: StartSessionRequest,
     current_user: dict[str, str] | None = Depends(get_optional_current_user),
 ):
-    """Triggers Phase 1: Assessment and MCQ Generation"""
+    """Starts an assessment or builds a roadmap for a manually selected level."""
     user_id = current_user["id"] if current_user else "guest"
-    res = orchestrator.start_session(req.query.strip(), user_id)
+    res = orchestrator.start_session(req.query.strip(), user_id, req.manual_level)
     if "error" in res:
         raise HTTPException(status_code=400, detail=res["error"])
     return res

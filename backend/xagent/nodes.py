@@ -7,6 +7,17 @@ from utils.json_utils import extract_and_parse_json
 from agents.content import fetch_youtube_resources
 from agents.safety import verify_roadmap_quality
 from agents.explainability import generate_explanations
+from agents.roadmap import generate_roadmap
+
+def generate_roadmap_node(state: AgentTutorState) -> AgentTutorState:
+    """Generates the initial roadmap for the difficulty level in graph state."""
+    state["base_roadmap"] = generate_roadmap(
+        state["query"],
+        state["difficulty_level"],
+        state["learning_style"],
+        state["domain"],
+    )
+    return state
 
 def adapt_roadmap_node(state: AgentTutorState) -> AgentTutorState:
     """Modifies the base roadmap to deeply align with the user's specific learning style."""
