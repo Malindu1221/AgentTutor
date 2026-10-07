@@ -2,6 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 import AuthGuard from "../../components/auth-guard";
 import { apiFetch, clearAccessToken, responseError } from "../../lib/api";
@@ -34,6 +38,12 @@ function isPdfAnalysis(value: unknown): value is PdfAnalysis {
   );
 }
 
+function normalizeMathDelimiters(markdown: string): string {
+  return markdown
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_match, formula: string) => `$$\n${formula.trim()}\n$$`)
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_match, formula: string) => `$${formula.trim()}$`);
+}
+
 function PdfStudyContent() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -41,6 +51,8 @@ function PdfStudyContent() {
   const [uploading, setUploading] = useState(false);
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
+  const [streamingQuestion, setStreamingQuestion] = useState("");
+  const [streamingAnswer, setStreamingAnswer] = useState("");
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [error, setError] = useState("");
 
@@ -98,6 +110,8 @@ function PdfStudyContent() {
     }
 
     setAsking(true);
+    setStreamingQuestion(submittedQuestion);
+    setStreamingAnswer("");
     setError("");
     try {
       const response = await apiFetch("/api/pdf/ask", {
@@ -114,26 +128,76 @@ function PdfStudyContent() {
         return;
       }
       if (!response.ok) throw new Error(await responseError(response));
-      const result: unknown = await response.json();
-      if (
-        typeof result !== "object" ||
-        result === null ||
-        !("answer" in result)
-      ) {
-        throw new Error("The server returned an invalid answer. Please try again.");
+      if (!response.body) {
+        throw new Error("The server did not provide an answer stream. Please try again.");
       }
-      const answer = result.answer;
-      if (typeof answer !== "string" || !answer.trim()) {
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer = "";
+      const processEvent = (eventText: string) => {
+        let eventName = "message";
+        const dataLines: string[] = [];
+        for (const line of eventText.split("\n")) {
+          if (line.startsWith("event:")) eventName = line.slice(6).trim();
+          if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
+        }
+        if (dataLines.length === 0) return;
+
+        let payload: unknown;
+        try {
+          payload = JSON.parse(dataLines.join("\n"));
+        } catch {
+          throw new Error("The server returned an invalid answer stream. Please try again.");
+        }
+
+        if (eventName === "error") {
+          const detail =
+            typeof payload === "object" &&
+            payload !== null &&
+            "detail" in payload &&
+            typeof payload.detail === "string"
+              ? payload.detail
+              : "Groq could not finish answering the question. Please try again.";
+          throw new Error(detail);
+        }
+        if (eventName === "token" && typeof payload === "string") {
+          answer += payload;
+          setStreamingAnswer(answer);
+        }
+      };
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          buffer = (buffer + decoder.decode(value, { stream: !done })).replace(/\r\n/g, "\n");
+          let eventBoundary = buffer.indexOf("\n\n");
+          while (eventBoundary !== -1) {
+            processEvent(buffer.slice(0, eventBoundary));
+            buffer = buffer.slice(eventBoundary + 2);
+            eventBoundary = buffer.indexOf("\n\n");
+          }
+          if (done) break;
+        }
+        if (buffer.trim()) processEvent(buffer);
+      } finally {
+        reader.releaseLock();
+      }
+
+      if (!answer.trim()) {
         throw new Error("The server returned an invalid answer. Please try again.");
       }
       setConversation((items) => [
         ...items,
-        { question: submittedQuestion, answer },
+        { question: submittedQuestion, answer: answer.trim() },
       ]);
       setQuestion("");
     } catch (askError) {
       setError(askError instanceof Error ? askError.message : "Could not answer the question.");
     } finally {
+      setStreamingQuestion("");
+      setStreamingAnswer("");
       setAsking(false);
     }
   };
@@ -243,11 +307,41 @@ function PdfStudyContent() {
                       </div>
                       <div className="mr-6 rounded-xl bg-gray-100 p-4">
                         <p className="text-xs font-bold uppercase text-gray-700">Answer</p>
-                        <p className="mt-1 whitespace-pre-wrap leading-relaxed">{item.answer}</p>
+                        <div className="markdown-content mt-1 leading-relaxed">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                          >
+                            {normalizeMathDelimiters(item.answer)}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                     </li>
                   ))}
                 </ol>
+              )}
+
+              {asking && streamingQuestion && (
+                <div aria-live="polite" className="space-y-3">
+                  <div className="ml-6 rounded-xl bg-blue-50 p-4">
+                    <p className="text-xs font-bold uppercase text-blue-800">You asked</p>
+                    <p className="mt-1 whitespace-pre-wrap">{streamingQuestion}</p>
+                  </div>
+                  <div className="mr-6 rounded-xl bg-gray-100 p-4">
+                    <p className="text-xs font-bold uppercase text-gray-700">Answer</p>
+                    <div className="markdown-content mt-1 leading-relaxed">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {normalizeMathDelimiters(streamingAnswer)}
+                      </ReactMarkdown>
+                      {!streamingAnswer && (
+                        <span className="text-sm text-gray-500">Generating answer...</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
 
               <form onSubmit={askQuestion} className="space-y-3">
