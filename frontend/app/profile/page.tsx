@@ -136,16 +136,19 @@ function ProfileContent() {
   const bookmarkText = profile.bookmarks.map((item) => `${item.title} | ${item.url}`).join("\n");
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 text-black md:p-12">
-      <div className="mx-auto max-w-5xl space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold">Your learning profile</h1>
-            <p className="mt-1 text-gray-600">Add a separate entry on each line.</p>
-          </div>
+    <main className="min-h-screen bg-slate-200 px-4 py-8 text-slate-900 md:px-8 md:py-12">
+      <div className="mx-auto w-full max-w-6xl space-y-8">
+        <header className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-7 text-white shadow-xl shadow-slate-900/15 md:p-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-200">
+            Personalize your learning
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">
+            Your learning profile
+          </h1>
+          <p className="mt-2 text-slate-300">Add a separate entry on each line.</p>
         </header>
 
-        <p className="rounded bg-blue-50 p-4 text-sm text-blue-900">
+        <p className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-relaxed text-blue-950 shadow-sm">
           Profile details help tailor your roadmap and resource recommendations. Relevant
           education, work, project, and skill details are included as context in AI requests.
         </p>
@@ -153,18 +156,18 @@ function ProfileContent() {
         <AnalyticsDashboard />
 
         <section aria-labelledby="profile-details-heading" className="space-y-5">
-          <h2 id="profile-details-heading" className="text-2xl font-bold">
+          <h2 id="profile-details-heading" className="text-2xl font-bold text-slate-900">
             Profile details
           </h2>
           {loading ? (
-            <p className="rounded-xl bg-white p-6 text-gray-600 shadow" role="status">
+            <p className="rounded-2xl border border-gray-300 bg-white p-6 text-slate-600 shadow-xl" role="status">
               Loading your profile...
             </p>
           ) : (
             <form
               onSubmit={saveProfile}
               onChange={() => setProfileSaved(false)}
-              className="space-y-5 rounded-xl bg-white p-6 shadow"
+              className="space-y-5 rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10 md:p-8"
             >
               {[
                 ["education", "Education", "Institution, qualification, subject, or learning goal"],
@@ -174,7 +177,7 @@ function ProfileContent() {
                 ["bookmarks", "Learning bookmarks", "One per line: Title | https://example.com"],
               ].map(([name, label, placeholder]) => (
                 <label key={name} className="block space-y-2">
-                  <span className="font-semibold">{label}</span>
+                  <span className="font-semibold text-slate-800">{label}</span>
                   <textarea
                     name={name}
                     rows={name === "bookmarks" ? 3 : 4}
@@ -186,7 +189,7 @@ function ProfileContent() {
                               : bookmarkText
                     }
                     placeholder={placeholder}
-                    className="w-full rounded border p-3"
+                    className="w-full rounded-xl border border-gray-300 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                   />
                 </label>
               ))}
@@ -195,19 +198,19 @@ function ProfileContent() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full rounded bg-blue-600 p-3 font-semibold text-white disabled:bg-blue-300"
+                className="w-full rounded-xl bg-slate-900 px-8 py-3.5 font-semibold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-wait disabled:opacity-50 sm:w-auto"
               >
                 {saving ? "Saving..." : "Save profile"}
               </button>
               {profileSaved && (
-                <div className="rounded-lg bg-green-50 p-4 text-green-900">
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-950">
                   <p role="status">
                     Profile saved. Regenerate recommendations to use these updates.
                   </p>
                   <button
                     type="button"
                     onClick={() => router.push("/recommendations?generate=1")}
-                    className="mt-3 rounded-lg bg-green-800 px-4 py-2 font-semibold text-white hover:bg-green-900"
+                    className="mt-3 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white shadow-md transition-all hover:bg-slate-800"
                   >
                     Generate updated recommendations
                   </button>
