@@ -143,19 +143,19 @@ export default function Home() {
 
   return (
     <AuthGuard>
-      <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 md:px-8">
-        <div className="mx-auto max-w-7xl space-y-8">
-          <section className="mx-auto w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-2xl shadow-slate-900/5 sm:p-12">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-800">
-              Your learning journey
+      <main className="min-h-screen bg-slate-50 text-slate-900">
+        <section className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-4 py-14 text-white shadow-xl md:py-20">
+          <div className="mx-auto w-full max-w-5xl text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-blue-200">
+              Your learning journey starts here
             </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
               What do you want to learn?
             </h1>
-            <p className="mt-3 text-slate-600">
-              Tell us a subject and we’ll help you find the right path.
+            <p className="mx-auto mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
+              Tell us a subject and we’ll build a path that fits your goals and current level.
             </p>
-            <form onSubmit={confirmTopic} className="mt-7 space-y-4">
+            <form onSubmit={confirmTopic} className="mx-auto mt-8 max-w-4xl space-y-4">
               <label htmlFor="learning-topic" className="sr-only">
                 Topic you want to learn
               </label>
@@ -165,7 +165,7 @@ export default function Home() {
                 type="text"
                 required
                 maxLength={500}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-5 py-5 text-base text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                className="w-full rounded-2xl border border-white/70 bg-white px-5 py-5 text-base text-slate-900 shadow-xl shadow-black/20 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-400/30"
                 placeholder="e.g., learn python programming"
                 value={query}
                 onChange={(event) => {
@@ -177,26 +177,26 @@ export default function Home() {
               {!topicConfirmed && (
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800"
+                  className="w-full rounded-xl bg-blue-500 px-6 py-4 font-semibold text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:bg-blue-400 sm:w-auto sm:min-w-40"
                 >
                   Continue
                 </button>
               )}
               {topicConfirmed && (
-                <div className="space-y-5 pt-2 text-left">
+                <div className="space-y-5 rounded-2xl border border-white/15 bg-white/10 p-5 text-left shadow-lg backdrop-blur-sm sm:p-6">
                   <fieldset className="space-y-3">
-                    <legend className="font-semibold text-slate-900">How would you like to choose your level?</legend>
+                    <legend className="font-semibold text-white">How would you like to choose your level?</legend>
                     <button
                       type="button"
                       onClick={() => void startSession()}
                       disabled={loading}
-                      className="w-full rounded-xl border border-slate-300 px-5 py-4 text-left font-semibold text-slate-800 transition hover:border-blue-500 hover:bg-blue-50 disabled:opacity-60"
+                      className="w-full rounded-xl border border-white/25 bg-white px-5 py-4 text-left font-semibold text-slate-900 transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-60"
                     >
                       {loading ? "Starting..." : "Take a quick quiz to find my level"}
                     </button>
                   </fieldset>
                   <fieldset className="space-y-3">
-                    <legend className="font-semibold text-slate-900">I know my level</legend>
+                    <legend className="font-semibold text-white">I know my level</legend>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       {(["beginner", "intermediate", "advanced"] as const).map((level) => (
                         <button
@@ -204,7 +204,7 @@ export default function Home() {
                           type="button"
                           onClick={() => void startSession(level)}
                           disabled={loading}
-                          className="rounded-xl bg-slate-100 px-4 py-3 font-semibold capitalize text-slate-800 transition hover:bg-slate-200 disabled:opacity-60"
+                          className="rounded-xl border border-white/20 bg-slate-800/80 px-4 py-3 font-semibold capitalize text-white transition hover:bg-slate-700 disabled:opacity-60"
                         >
                           {level}
                         </button>
@@ -213,11 +213,13 @@ export default function Home() {
                   </fieldset>
                 </div>
               )}
-              {error && <p role="alert" className="text-left text-red-700">{error}</p>}
+              {error && <p role="alert" className="rounded-xl bg-red-100 px-4 py-3 text-left text-red-800">{error}</p>}
             </form>
-          </section>
+          </div>
+        </section>
 
-          <section className="space-y-6 rounded-3xl border border-slate-200 bg-slate-100/70 px-4 py-8 md:px-8 md:py-10">
+        <div className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-12">
+          <section className="space-y-6">
             <header className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-800">
