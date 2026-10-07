@@ -365,25 +365,25 @@ function PdfStudyContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-6 text-gray-900 md:px-8">
+    <main className="min-h-screen bg-slate-200 px-4 py-6 text-slate-900 md:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
-        <aside className="w-full shrink-0 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 lg:w-80">
+        <aside className="w-full shrink-0 rounded-2xl border border-gray-300 bg-white p-5 shadow-xl shadow-slate-900/10 lg:w-80">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-lg font-bold">PDF notebooks</h1>
+            <h1 className="text-lg font-bold text-slate-900">PDF notebooks</h1>
             <button
               type="button"
               onClick={startNewSession}
               disabled={uploading || asking || loadingSessionId !== null}
-              className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              className="rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               + New PDF
             </button>
           </div>
-          <p className="mt-1 text-xs text-gray-500">Your uploaded PDFs and chats</p>
+          <p className="mt-1 text-xs text-slate-500">Your uploaded PDFs and chats</p>
           <nav aria-label="PDF chat history" className="mt-4 max-h-[70vh] space-y-2 overflow-y-auto">
-            {loadingSessions && <p className="p-3 text-sm text-gray-500">Loading sessions...</p>}
+            {loadingSessions && <p className="p-3 text-sm text-slate-500">Loading sessions...</p>}
             {!loadingSessions && sessions.length === 0 && (
-              <p className="p-3 text-sm text-gray-500">No PDF sessions yet.</p>
+              <p className="p-3 text-sm text-slate-500">No PDF sessions yet.</p>
             )}
             {sessions.map((session) => (
               <button
@@ -395,11 +395,11 @@ function PdfStudyContent() {
                 className={`w-full rounded-xl p-3 text-left transition ${
                   session.session_id === activeSessionId
                     ? "bg-blue-50 text-blue-950 ring-1 ring-blue-200"
-                    : "text-gray-800 hover:bg-gray-100"
+                    : "text-slate-800 hover:bg-slate-100"
                 }`}
               >
                 <span className="block truncate font-semibold">{session.pdf_filename}</span>
-                <span className="mt-1 block text-xs text-gray-500">
+                <span className="mt-1 block text-xs text-slate-500">
                   {new Date(session.created_at).toLocaleString()}
                 </span>
               </button>
@@ -408,12 +408,12 @@ function PdfStudyContent() {
         </aside>
 
         <section className="min-w-0 flex-1 space-y-6">
-          <header className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
-            <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">
+          <header className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 text-white shadow-xl shadow-slate-900/15 md:p-8">
+            <p className="text-sm font-semibold uppercase tracking-widest text-blue-200">
               Groq-powered study tool
             </p>
-            <h2 className="mt-2 text-3xl font-bold md:text-4xl">PDF Study Assistant</h2>
-            <p className="mt-2 text-gray-600">
+            <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">PDF Study Assistant</h2>
+            <p className="mt-2 text-slate-300">
               {activeFilename
                 ? `Current notebook: ${activeFilename}`
                 : "Upload a PDF to create a notebook with its own saved chat history."}
@@ -421,7 +421,7 @@ function PdfStudyContent() {
           </header>
 
           {error && (
-            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+            <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm">
               {error}
             </p>
           )}
@@ -429,10 +429,10 @@ function PdfStudyContent() {
           {(creatingSession || (!activeSessionId && !loadingSessions)) && (
             <form
               onSubmit={uploadPdf}
-              className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200"
+              className="space-y-4 rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10"
             >
-              <h3 className="text-xl font-bold">Start a new PDF chat</h3>
-              <label htmlFor="pdf-file" className="block font-semibold">
+              <h3 className="text-xl font-bold text-slate-900">Start a new PDF chat</h3>
+              <label htmlFor="pdf-file" className="block font-semibold text-slate-800">
                 Select a text-based PDF (maximum 10 MB)
               </label>
               <input
@@ -445,13 +445,13 @@ function PdfStudyContent() {
                   setFile(event.target.files?.[0] ?? null);
                   setError("");
                 }}
-                className="block w-full rounded-lg border border-gray-300 p-3 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:font-semibold file:text-blue-800"
+                className="block w-full rounded-xl border border-gray-300 bg-slate-50 p-3 text-slate-800 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:font-semibold file:text-white"
               />
-              {file && <p className="text-sm text-gray-600">Selected: {file.name}</p>}
+              {file && <p className="text-sm text-slate-600">Selected: {file.name}</p>}
               <button
                 type="submit"
                 disabled={!file || uploading}
-                className="rounded-lg bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800 disabled:cursor-wait disabled:bg-blue-300"
+                className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-wait disabled:opacity-50"
               >
                 {uploading ? "Extracting and analyzing PDF..." : "Upload and create chat"}
               </button>
@@ -460,25 +460,25 @@ function PdfStudyContent() {
 
           {analysis && activeSessionId === analysis.session_id && (
             <section aria-label="PDF analysis" className="grid gap-5 md:grid-cols-3">
-              <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 md:col-span-2">
-                <h3 className="text-xl font-bold">Summary</h3>
-                <p className="mt-3 whitespace-pre-wrap leading-relaxed text-gray-700">
+              <article className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10 md:col-span-2">
+                <h3 className="text-xl font-bold text-slate-900">Summary</h3>
+                <p className="mt-3 whitespace-pre-wrap leading-relaxed text-slate-700">
                   {analysis.summary}
                 </p>
               </article>
-              <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
-                <h3 className="text-xl font-bold">Difficulty</h3>
+              <article className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10">
+                <h3 className="text-xl font-bold text-slate-900">Difficulty</h3>
                 <p className="mt-3 inline-flex rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-900">
                   {analysis.difficulty}
                 </p>
               </article>
-              <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 md:col-span-3">
-                <h3 className="text-xl font-bold">Key topics</h3>
+              <article className="rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10 md:col-span-3">
+                <h3 className="text-xl font-bold text-slate-900">Key topics</h3>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {analysis.key_topics.map((topic, index) => (
                     <li
                       key={`${topic}-${index}`}
-                      className="rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-900"
+                      className="rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-950"
                     >
                       {topic}
                     </li>
@@ -489,10 +489,10 @@ function PdfStudyContent() {
           )}
 
           {activeSessionId && (
-            <section className="space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            <section className="space-y-5 rounded-2xl border border-gray-300 bg-white p-6 shadow-xl shadow-slate-900/10">
               <div>
-                <h3 className="text-2xl font-bold">Chat about this PDF</h3>
-                <p className="mt-1 text-sm text-gray-600">
+                <h3 className="text-2xl font-bold text-slate-900">Chat about this PDF</h3>
+                <p className="mt-1 text-sm text-slate-600">
                   Chat history is saved separately for each uploaded PDF.
                 </p>
               </div>
@@ -501,13 +501,13 @@ function PdfStudyContent() {
                 {conversation.map((message) => (
                   <li
                     key={message.message_id}
-                    className={`rounded-xl p-4 ${
+                    className={`rounded-xl border p-4 ${
                       message.role === "user"
-                        ? "ml-6 bg-blue-50"
-                        : "mr-6 bg-gray-100"
+                        ? "ml-6 border-blue-200 bg-blue-50 text-blue-950"
+                        : "mr-6 border-gray-200 bg-white text-gray-800 shadow-md"
                     }`}
                   >
-                    <p className="text-xs font-bold uppercase text-gray-700">
+                    <p className="text-xs font-bold uppercase text-slate-700">
                       {message.role === "user" ? "You" : "Assistant"}
                     </p>
                     {message.role === "assistant" ? (
@@ -521,17 +521,17 @@ function PdfStudyContent() {
                 ))}
                 {asking && (
                   <>
-                    <li className="ml-6 rounded-xl bg-blue-50 p-4">
-                      <p className="text-xs font-bold uppercase text-gray-700">You</p>
+                    <li className="ml-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950">
+                      <p className="text-xs font-bold uppercase text-slate-700">You</p>
                       <p className="mt-1 whitespace-pre-wrap">{streamingQuestion}</p>
                     </li>
-                    <li aria-live="polite" className="mr-6 rounded-xl bg-gray-100 p-4">
-                      <p className="text-xs font-bold uppercase text-gray-700">Assistant</p>
+                    <li aria-live="polite" className="mr-6 rounded-xl border border-gray-200 bg-white p-4 text-gray-800 shadow-md">
+                      <p className="text-xs font-bold uppercase text-slate-700">Assistant</p>
                       <div className="mt-1">
                         {streamingAnswer ? (
                           <MarkdownAnswer content={streamingAnswer} />
                         ) : (
-                          <span className="text-sm text-gray-500">Generating answer...</span>
+                          <span className="text-sm text-slate-500">Generating answer...</span>
                         )}
                       </div>
                     </li>
@@ -553,12 +553,12 @@ function PdfStudyContent() {
                   onChange={(event) => setQuestion(event.target.value)}
                   placeholder="Ask a question about this PDF..."
                   disabled={asking}
-                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-xl border border-gray-300 bg-slate-50 p-4 text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                 />
                 <button
                   type="submit"
                   disabled={asking || !question.trim()}
-                  className="rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-gray-700 disabled:cursor-wait disabled:bg-gray-400"
+                  className="rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-wait disabled:opacity-50"
                 >
                   {asking ? "Answering..." : "Send"}
                 </button>
