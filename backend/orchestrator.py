@@ -4,7 +4,7 @@ from typing import Literal
 from agents.safety import run_safety
 from agents.classifier import run_classifier
 from agents.style_detector import detect_style
-from agents.learner_understanding import generate_mcqs, evaluate_answers
+from agents.learner_understanding import evaluate_answers
 from agents.content import recommend_content
 from agents.explainability import generate_explanations
 from services.sqlite_store import save_context, load_context
@@ -52,7 +52,17 @@ def start_session(
         context["stage"] = "building_roadmap"
         return _complete_session(context, evaluation, user_profile or {})
 
-    mcqs = generate_mcqs(query, domain, n=5)
+    assessment_state = tutor_graph.invoke({
+        "session_id": session_id,
+        "query": query,
+        "domain": domain,
+        "learning_style": style,
+        "workflow_mode": "assessment",
+    })
+    if assessment_state.get("workflow_error"):
+        return {"error": assessment_state["workflow_error"]}
+    mcqs = assessment_state.get("mcqs", [])
+    context["topic_validated"] = True
     context["mcqs"] = mcqs
     context["stage"] = "awaiting_answers"
     save_context(session_id, user_id, context)
@@ -83,9 +93,13 @@ def _complete_session(context: dict, evaluation: dict, user_profile: dict) -> di
         "domain": domain,
         "difficulty_level": difficulty,
         "learning_style": style,
+        "workflow_mode": "roadmap",
+        "topic_validated": context.get("topic_validated", False),
         "user_profile": user_profile,
         "evaluation": evaluation,
     })
+    if final_state.get("workflow_error"):
+        return {"error": final_state["workflow_error"]}
     roadmap = final_state.get("refined_roadmap", final_state.get("base_roadmap", []))
 
     with ThreadPoolExecutor(max_workers=3) as executor:

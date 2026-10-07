@@ -4,11 +4,21 @@ from xagent.state import AgentTutorState
 from xagent.nodes import (
     adapt_roadmap_node,
     finalize_node,
+    generate_assessment_node,
     generate_roadmap_node,
     retrieve_content_node,
+    validate_topic_node,
     verify_content_node,
     web_search_node,
 )
+
+def route_after_validation(state: AgentTutorState) -> str:
+    """Routes valid topics into assessment or roadmap generation."""
+    if state.get("topic_validation_status") != "valid_topic":
+        return "stop"
+    if state.get("workflow_mode") == "assessment":
+        return "assessment"
+    return "roadmap"
 
 def should_review(state: AgentTutorState) -> str:
     """Conditional edge router based on verification results."""
@@ -21,6 +31,8 @@ def build_graph():
     builder = StateGraph(AgentTutorState)
 
     # 1. Add Nodes
+    builder.add_node("validate_topic", validate_topic_node)
+    builder.add_node("assessment", generate_assessment_node)
     builder.add_node("roadmap_generation", generate_roadmap_node)
     builder.add_node("adapt", adapt_roadmap_node)
     builder.add_node("retrieve", retrieve_content_node)
@@ -33,7 +45,17 @@ def build_graph():
     builder.add_node("finalize", finalize_node)
 
     # 2. Add Edges
-    builder.add_edge(START, "roadmap_generation")
+    builder.add_edge(START, "validate_topic")
+    builder.add_conditional_edges(
+        "validate_topic",
+        route_after_validation,
+        {
+            "stop": END,
+            "assessment": "assessment",
+            "roadmap": "roadmap_generation",
+        },
+    )
+    builder.add_edge("assessment", END)
     builder.add_edge("roadmap_generation", "adapt")
     builder.add_edge("adapt", "retrieve")
     
