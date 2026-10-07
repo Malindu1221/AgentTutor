@@ -53,12 +53,10 @@ def validate_topic_node(state: AgentTutorState) -> AgentTutorState:
             max_tokens=512,
         )
     except Exception as exc:
-        # API එකෙන් මොකක් හරි Error එකක් ආවොත්, යූසර්ව නවත්වන්නේ නැතුව ඉස්සරහට යවනවා
         logger.error(f"Groq API Error during validation: {exc}. Defaulting to valid_topic.")
         state["topic_validation_status"] = "valid_topic"
         return state
 
-    # JSON එක වටේ තියෙන markdown කෑලි සුද්ද කිරීම
     cleaned_response = re.sub(
         r"^\s*```(?:json)?\s*|\s*```\s*$",
         "",
@@ -67,10 +65,8 @@ def validate_topic_node(state: AgentTutorState) -> AgentTutorState:
     ).strip()
     
     try:
-        # Pydantic නැතුව කෙලින්ම JSON එක කියවීම
         result = json.loads(cleaned_response)
         
-        # is_valid එක True නම් හෝ, JSON එකේ is_valid කියලා එකක් නැත්නම් True කියලා හිතනවා
         if result.get("is_valid", True):
             state["topic_validation_status"] = "valid_topic"
         else:
@@ -78,7 +74,6 @@ def validate_topic_node(state: AgentTutorState) -> AgentTutorState:
             state["workflow_error"] = "Invalid topic. Please enter a meaningful subject to learn."
             
     except (json.JSONDecodeError, ValueError) as exc:
-        # JSON එක කියවන්න බැරි වුණොත්, යූසර්ව නවත්වන්නේ නැතුව ඉස්සරහට යවනවා
         logger.error(f"JSON Parsing Error: {exc}. Raw response: {response}. Defaulting to valid_topic.")
         state["topic_validation_status"] = "valid_topic"
 

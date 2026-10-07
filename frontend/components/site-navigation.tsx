@@ -13,6 +13,10 @@ export default function SiteNavigation() {
   const pathname = usePathname();
   const router = useRouter();
 
+  if (pathname === "/login" || pathname === "/register") {
+    return null;
+  }
+
   const link = (href: string, label: string) => (
     <Link
       href={href}
