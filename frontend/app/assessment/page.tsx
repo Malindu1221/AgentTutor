@@ -95,39 +95,65 @@ export default function AssessmentPage() {
   if (!sessionData) return null;
 
   return (
-    <main className="min-h-screen p-10 md:p-24 bg-gray-50 text-black">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold">Diagnostic Assessment</h1>
-        <p className="text-gray-600">Domain: {sessionData.domain}</p>
-        
+    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 md:px-8 md:py-12">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 md:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-800">
+            Personalized learning path
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+            Diagnostic Assessment
+          </h1>
+          <p className="mt-3 text-slate-600">
+            Answer a few questions so we can tailor your roadmap to your current level.
+          </p>
+          <p className="mt-4 inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+            Domain: {sessionData.domain}
+          </p>
+        </header>
+
         {sessionData.mcqs.map((mcq) => (
-          <div key={mcq.id} className="p-6 bg-white rounded-lg shadow">
-            <h3 className="font-semibold mb-4">{mcq.question}</h3>
+          <section
+            key={mcq.id}
+            className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-lg shadow-slate-900/5 md:p-8"
+          >
+            <h2 className="mb-5 text-lg font-semibold leading-relaxed text-gray-800">
+              {mcq.question}
+            </h2>
             <div className="space-y-2">
               {mcq.options.map((opt, idx) => (
-                <label key={idx} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-100 rounded">
+                <label
+                  key={idx}
+                  className="flex cursor-pointer items-center gap-3 rounded-xl p-3 transition-colors hover:bg-gray-50 has-[:checked]:bg-blue-50"
+                >
                   <input
                     type="radio"
                     name={mcq.id}
                     value={idx}
                     onChange={() => setAnswers(prev => ({ ...prev, [mcq.id]: idx }))}
-                    className="w-4 h-4 text-blue-600"
+                    className="h-5 w-5 shrink-0 accent-slate-900 focus:ring-2 focus:ring-blue-500/20"
                   />
-                  <span>{opt}</span>
+                  <span className="text-base leading-relaxed text-slate-700">{opt}</span>
                 </label>
               ))}
             </div>
-          </div>
+          </section>
         ))}
 
-        <button
-          onClick={submitAnswers}
-          disabled={loading || Object.keys(answers).length < sessionData.mcqs.length}
-          className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:bg-gray-400"
-        >
-          {loading ? "Analyzing and Building Roadmap..." : "Submit Answers"}
-        </button>
-        {error && <p role="alert" className="text-red-700">{error}</p>}
+        <div className="flex flex-col items-stretch gap-4 pt-2 md:flex-row md:items-center">
+          <button
+            onClick={submitAnswers}
+            disabled={loading || Object.keys(answers).length < sessionData.mcqs.length}
+            className="w-full rounded-xl bg-slate-900 px-8 py-4 font-semibold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 md:w-auto"
+          >
+            {loading ? "Analyzing and Building Roadmap..." : "Submit Answers"}
+          </button>
+          {error && (
+            <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+              {error}
+            </p>
+          )}
+        </div>
       </div>
     </main>
   );
