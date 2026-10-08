@@ -45,6 +45,7 @@ class AgentTutorState(TypedDict):
     # LangGraph Output
     refined_roadmap: NotRequired[List[RoadmapStep]]
     ranked_resources: NotRequired[List[LearningResource]]
+    seen_youtube_urls: NotRequired[List[str]]
     final_recommendations: NotRequired[Dict[str, Any]]
     review_required: NotRequired[bool]
     verification_retries: NotRequired[int]
