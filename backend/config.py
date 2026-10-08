@@ -5,7 +5,7 @@ load_dotenv()
 
 class Config:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+    GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
     MONGO_URI = os.getenv("MONGO_URI")
     MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "agenttutor")
     JWT_SECRET = os.getenv("JWT_SECRET")
