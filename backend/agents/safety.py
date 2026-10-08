@@ -20,32 +20,56 @@ def run_safety(query: str) -> dict:
 
 def verify_roadmap_quality(roadmap: list, domain: str) -> dict:
     """Uses the configured Groq model to verify roadmap safety and quality."""
-    
-    system_instruction = (
-        "You are an expert educational Quality Assurance agent. "
-        "Review the learning roadmap, ensure it contains no harmful material, is strictly educational, "
-        "and accurately matches the given domain. "
-        "You must respond strictly in valid JSON format without Markdown formatting."
+
+    def short_text(value, byte_limit: int) -> str:
+        text = str(value or "")
+        return text.encode("utf-8")[:byte_limit].decode("utf-8", errors="ignore")
+
+    # Only include information needed for the quality check. Keep the serialized
+    # roadmap bounded so even unusually large generated roadmaps stay small.
+    compact_roadmap = []
+    for index, module in enumerate(roadmap or [], start=1):
+        if not isinstance(module, dict):
+            continue
+        step = {
+            "step": short_text(module.get("id") or index, 20),
+            "title": short_text(module.get("title"), 120),
+            "resources": [],
+        }
+        resources = module.get("resources") or []
+        if isinstance(resources, list):
+            for resource in resources:
+                if not isinstance(resource, dict):
+                    continue
+                item = {
+                    "title": short_text(resource.get("title"), 100),
+                    "url": short_text(resource.get("url"), 180),
+                }
+                if item["title"] or item["url"]:
+                    step["resources"].append(item)
+                if len(step["resources"]) == 3:
+                    break
+
+        candidate = compact_roadmap + [step]
+        # Bound UTF-8 input bytes, then reserve room for instructions and output.
+        serialized_candidate = json.dumps(candidate, ensure_ascii=False, separators=(",", ":"))
+        if len(serialized_candidate.encode("utf-8")) > 3600:
+            break
+        compact_roadmap.append(step)
+
+    system_instruction = "Check roadmap safety and domain relevance. Return JSON only."
+    prompt = (
+        f"Domain: {short_text(domain, 120)}\n"
+        f"Roadmap: {json.dumps(compact_roadmap, ensure_ascii=False, separators=(',', ':'))}\n"
+        'Return JSON: {"is_safe":true,"feedback":"brief reason or Approved"}.'
     )
-    
-    prompt = f"""
-    Review the following learning roadmap for the domain: {domain}.
-    Ensure the content contains no harmful material, is strictly educational, and accurately matches the domain.
-    
-    Roadmap: {json.dumps(roadmap)}
-    
-    Respond strictly in valid JSON format without Markdown formatting:
-    {{
-        "is_safe": true or false,
-        "feedback": "Brief string explaining any issues, or 'Approved' if safe."
-    }}
-    """
     
     try:
         response_text = call_groq(
             prompt=prompt, 
             system_instruction=system_instruction, 
             temperature=0.1,
+            max_tokens=256,
         )
         
         # Clean the response to ensure valid JSON parsing

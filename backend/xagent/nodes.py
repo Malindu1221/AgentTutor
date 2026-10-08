@@ -3,6 +3,11 @@ import logging
 import os
 import httpx
 import re
+<<<<<<< Updated upstream
+=======
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
+>>>>>>> Stashed changes
 from pydantic import BaseModel, ConfigDict
 from xagent.state import AgentTutorState
 from services.llm_client import call_groq, call_groq_json
@@ -164,11 +169,94 @@ def verify_content_node(state: AgentTutorState) -> AgentTutorState:
         
     return state
 
+def _valid_youtube_resources(resources):
+    valid, seen = [], set()
+    for resource in resources if isinstance(resources, list) else []:
+        if not isinstance(resource, dict):
+            continue
+        url = canonical_youtube_watch_url(resource.get("url", ""))
+        title = resource.get("title")
+        if not url or not isinstance(title, str) or not title.strip() or url in seen:
+            continue
+        seen.add(url)
+        valid.append({**resource, "title": title.strip(), "url": url, "type": "youtube_video"})
+    return valid
+
+
+def _web_query(step_title, topic, difficulty):
+    return (
+        f"{difficulty} {topic} {step_title} documentation article tutorial English "
+        "-site:youtube.com -site:youtu.be -site:vimeo.com -site:tiktok.com "
+        "-jobs -job -indeed -hiring -careers -vacancies"
+    )
+
+
+def _tavily_search(query):
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        logger.warning("TAVILY_API_KEY not configured; web retrieval is unavailable.")
+        return []
+    try:
+        with httpx.Client() as client:
+            response = client.post(
+                "https://api.tavily.com/search",
+                json={"api_key": api_key, "query": query, "max_results": 8},
+                timeout=15.0,
+            )
+            response.raise_for_status()
+            results = response.json().get("results", [])
+            return results if isinstance(results, list) else []
+    except Exception as exc:
+        logger.warning("Tavily search failed: %s", exc)
+        return []
+
+
+_BLOCKED_WEB_HOSTS = (
+    "youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "tiktok.com",
+    "twitch.tv", "facebook.com", "instagram.com", "indeed.com", "glassdoor.com",
+    "linkedin.com", "ziprecruiter.com", "monster.com", "careerbuilder.com",
+)
+_JOB_TERMS = re.compile(r"\b(job|jobs|career|careers|hiring|vacancy|vacancies|employment)\b", re.I)
+
+
+def _valid_web_resources(resources):
+    valid, seen = [], set()
+    for resource in resources if isinstance(resources, list) else []:
+        if not isinstance(resource, dict):
+            continue
+        title, url = resource.get("title"), resource.get("url")
+        if not isinstance(title, str) or not title.strip() or not isinstance(url, str):
+            continue
+        try:
+            parsed = urlparse(url)
+            host = (parsed.hostname or "").lower()
+        except ValueError:
+            continue
+        if parsed.scheme not in {"http", "https"} or not host:
+            continue
+        if any(host == blocked or host.endswith(f".{blocked}") for blocked in _BLOCKED_WEB_HOSTS):
+            continue
+        if _JOB_TERMS.search(f"{title} {resource.get('content', '')} {url}"):
+            continue
+        normalized_url = url.rstrip("/")
+        if normalized_url in seen:
+            continue
+        seen.add(normalized_url)
+        valid.append({
+            "title": title.strip(),
+            "description": str(resource.get("content", "")),
+            "url": url,
+            "type": "web_resource",
+        })
+    return valid
+
+
 def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
-    """Enhances the refined roadmap by appending specific YouTube resources to each module."""
-    print("[LangGraph] Fetching YouTube learning resources for roadmap modules...")
+    """Fetch YouTube videos and web articles independently for every step."""
+    print("[LangGraph] Fetching YouTube and web resources for roadmap modules...")
     
     roadmap = state.get("refined_roadmap", [])
+<<<<<<< Updated upstream
     # Fallback to domain if query is missing, but prioritize the exact user query
     topic = state.get("query") or state.get("domain", "") 
     
@@ -182,6 +270,62 @@ def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
         
     state["refined_roadmap"] = roadmap
     state["status_message"] = "YouTube content resources appended."
+=======
+    topic = state.get("query") or state.get("domain", "")
+    domain = " ".join(
+        value
+        for value in (state.get("domain", ""), topic)
+        if value
+    )
+    difficulty = state.get("difficulty_level", "beginner")
+    def fetch_youtube(module):
+        title = str(module.get("title", ""))
+        specific_query = build_step_youtube_query(title, domain or topic, difficulty)
+        results = fetch_youtube_resources(specific_query, max_results=10)
+        videos = _valid_youtube_resources(results)
+        if len(videos) < 2:
+            fallback_query = f"{topic or domain} {difficulty} tutorial"
+            videos += [
+                item for item in _valid_youtube_resources(
+                    fetch_youtube_resources(fallback_query, max_results=10)
+                ) if item["url"] not in {video["url"] for video in videos}
+            ]
+        return videos[:2]
+
+    def fetch_web(module):
+        title = str(module.get("title", ""))
+        specific_query = _web_query(title, topic or domain, difficulty)
+        results = _tavily_search(specific_query)
+        articles = _valid_web_resources(results)
+        if len(articles) < 2:
+            fallback_query = _web_query("", topic or domain, difficulty)
+            articles += [
+                item for item in _valid_web_resources(_tavily_search(fallback_query))
+                if item["url"] not in {article["url"] for article in articles}
+            ]
+        return articles[:2]
+
+    # Each provider runs independently; failure of one never skips the other.
+    for module in roadmap:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            youtube_future = executor.submit(fetch_youtube, module)
+            web_future = executor.submit(fetch_web, module)
+            module["youtube_resources"] = youtube_future.result()
+            module["web_resources"] = web_future.result()
+            if len(module["youtube_resources"]) < 2 or len(module["web_resources"]) < 2:
+                logger.warning(
+                    "Step %s has incomplete resource results after fallback queries "
+                    "(YouTube=%d, web=%d). Check provider availability and API keys.",
+                    module.get("id", module.get("title", "unknown")),
+                    len(module["youtube_resources"]),
+                    len(module["web_resources"]),
+                )
+            # Keep the historical field for clients that still read resources.
+            module["resources"] = module["youtube_resources"]
+
+    state["refined_roadmap"] = roadmap
+    state["status_message"] = "YouTube videos and web articles fetched."
+>>>>>>> Stashed changes
     
     return state
 
@@ -226,8 +370,10 @@ def web_search_node(state: AgentTutorState) -> AgentTutorState:
     """Fetches up-to-date text articles and blog posts using Tavily API."""
     print("[LangGraph] Fetching Web resources via Tavily...")
     
+    # Retained as a compatibility node for callers that invoke it directly.
     roadmap = state.get("refined_roadmap", [])
     topic = state.get("query") or state.get("domain", "")
+<<<<<<< Updated upstream
     api_key = os.getenv("TAVILY_API_KEY")
     
     if not api_key:
@@ -261,7 +407,58 @@ def web_search_node(state: AgentTutorState) -> AgentTutorState:
             print(f"[LangGraph] Web search failed for {module.get('title')}: {e}")
             module["web_resources"] = []
             
+=======
+    difficulty = state.get("difficulty_level", "beginner")
+    for module in roadmap:
+        if not module.get("web_resources"):
+            module["web_resources"] = _valid_web_resources(
+                _tavily_search(_web_query(module.get("title", ""), topic, difficulty))
+            )
+>>>>>>> Stashed changes
     state["refined_roadmap"] = roadmap
-    state["status_message"] = "Web articles appended."
     
+<<<<<<< Updated upstream
     return state
+=======
+    return state
+
+
+def rank_content_node(state: AgentTutorState) -> AgentTutorState:
+    """Rank each step's YouTube and web resources before verification."""
+    roadmap = state.get("refined_roadmap", [])
+    target_domain = " ".join(
+        value
+        for value in (state.get("query", ""), state.get("domain", ""))
+        if value
+    )
+    all_ranked_resources = []
+
+    for module in roadmap:
+        youtube_resources = module.get("youtube_resources", module.get("resources", []))
+        web_resources = module.get("web_resources", [])
+        youtube_resources = _valid_youtube_resources(youtube_resources)
+        web_resources = _valid_web_resources(web_resources)
+        ranked_youtube = rank_and_filter_resources_sync(
+            target_domain,
+            youtube_resources if isinstance(youtube_resources, list) else [],
+            [],
+            limit=2,
+        )
+        ranked_web = rank_and_filter_resources_sync(
+            target_domain, [], web_resources, limit=2
+        )
+        # Domain ranking is a preference, not a reason to drop a valid search result.
+        ranked_youtube = (ranked_youtube + [r for r in youtube_resources if r["url"] not in {x["url"] for x in ranked_youtube}])[:2]
+        ranked_web = (ranked_web + [r for r in web_resources if r["url"] not in {x["url"] for x in ranked_web}])[:2]
+        module["youtube_resources"] = ranked_youtube
+        module["resources"] = ranked_youtube
+        module["web_resources"] = ranked_web
+        ranked_resources = ranked_youtube + ranked_web
+        module["ranked_resources"] = ranked_resources
+        all_ranked_resources.extend(ranked_resources)
+
+    state["refined_roadmap"] = roadmap
+    state["ranked_resources"] = all_ranked_resources
+    state["status_message"] = "YouTube and web resources ranked by domain relevance."
+    return state
+>>>>>>> Stashed changes

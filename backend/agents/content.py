@@ -9,6 +9,80 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 DB_PATH = "sessions.db"
 
+
+def build_step_youtube_query(step_title: str, domain: str, difficulty: str) -> str:
+    """Prioritize the roadmap step, using the broader domain as supporting context."""
+    parts = [
+        f'"{step_title.strip()}"' if step_title.strip() else "",
+        domain.strip(),
+        difficulty.strip(),
+        "tutorial",
+        "-shorts",
+    ]
+    return " ".join(part for part in parts if part)
+
+
+def canonical_youtube_watch_url(url: str) -> str | None:
+    """Return a canonical watch URL for direct YouTube video links."""
+    if not isinstance(url, str):
+        return None
+    try:
+        parsed_url = urlparse(url)
+    except ValueError:
+        return None
+    host = (parsed_url.hostname or "").lower()
+    if host in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+        video_id = parse_qs(parsed_url.query).get("v", [""])[0]
+    elif host == "youtu.be":
+        video_id = parsed_url.path.strip("/").split("/")[0]
+    else:
+        return None
+    if not video_id:
+        return None
+    return f"https://www.youtube.com/watch?v={video_id}"
+
+
+def _direct_youtube_videos(
+    resources: object,
+    limit: int,
+    seen_urls: set[str] | None = None,
+) -> list[dict]:
+    """Keep only entries that point to an individual YouTube video."""
+    if not isinstance(resources, list) or limit <= 0:
+        return []
+
+    videos = []
+    for resource in resources:
+        if not isinstance(resource, dict):
+            continue
+        title = resource.get("title")
+        url = resource.get("url")
+        if not isinstance(title, str) or not title.strip():
+            continue
+        if not isinstance(url, str):
+            continue
+
+        canonical_url = canonical_youtube_watch_url(url)
+        if not canonical_url:
+            continue
+        if seen_urls is not None and canonical_url in seen_urls:
+            continue
+
+        videos.append(
+            {
+                **resource,
+                "title": title.strip(),
+                "url": canonical_url,
+                "type": "youtube_video",
+            }
+        )
+        if seen_urls is not None:
+            seen_urls.add(canonical_url)
+        if len(videos) >= max(limit, 0):
+            break
+    return videos
+
+
 def search_cache(keyword: str):
     """Checks SQLite resources table for cached recommendations."""
     try:
@@ -92,7 +166,7 @@ def fetch_youtube_resources(topic: str, max_results: int = 2) -> list:
     }
     
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=15)
         response.raise_for_status()
         data = response.json()
         
@@ -109,4 +183,4 @@ def fetch_youtube_resources(topic: str, max_results: int = 2) -> list:
         return resources
     except Exception as e:
         print(f"[Content Agent] YouTube API Error: {e}")
-        return []   
+        return []

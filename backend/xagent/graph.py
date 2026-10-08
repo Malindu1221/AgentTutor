@@ -9,7 +9,6 @@ from xagent.nodes import (
     retrieve_content_node,
     validate_topic_node,
     verify_content_node,
-    web_search_node,
 )
 
 def route_after_validation(state: AgentTutorState) -> str:
@@ -38,7 +37,11 @@ def build_graph():
     builder.add_node("retrieve", retrieve_content_node)
     
     
+<<<<<<< Updated upstream
     builder.add_node("web_search", web_search_node)
+=======
+    builder.add_node("rank_content", rank_content_node)
+>>>>>>> Stashed changes
     
     builder.add_node("verify", verify_content_node)
     # Updated to call your actual explainability function instead of the lambda
@@ -59,9 +62,9 @@ def build_graph():
     builder.add_edge("roadmap_generation", "adapt")
     builder.add_edge("adapt", "retrieve")
     
-    # New Edges: retrieve (YouTube) -> web_search (Tavily) -> verify
-    builder.add_edge("retrieve", "web_search")
-    builder.add_edge("web_search", "verify")
+    # Retrieval fetches both resource categories concurrently before ranking.
+    builder.add_edge("retrieve", "rank_content")
+    builder.add_edge("rank_content", "verify")
     
     # 3. Add Conditional Routing
     builder.add_conditional_edges(

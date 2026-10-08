@@ -1,5 +1,33 @@
 from typing import TypedDict, List, Dict, Any, Literal, NotRequired
 
+<<<<<<< Updated upstream
+=======
+
+class LearningResource(TypedDict, total=False):
+    """A YouTube or web resource attached to a roadmap step."""
+
+    title: str
+    description: str
+    url: str
+    thumbnail: str
+    type: str
+    relevance_score: float
+
+
+class RoadmapStep(TypedDict, total=False):
+    """A roadmap step and its source-specific and ranked resources."""
+
+    id: str
+    title: str
+    description: str
+    estimated_time_hours: int
+    youtube_resources: List[LearningResource]
+    resources: List[LearningResource]
+    web_resources: List[LearningResource]
+    ranked_resources: List[LearningResource]
+
+
+>>>>>>> Stashed changes
 class AgentTutorState(TypedDict):
     """The shared state that flows through the LangGraph recommendation pipeline."""
     session_id: str
@@ -19,7 +47,18 @@ class AgentTutorState(TypedDict):
     evaluation: NotRequired[Dict[str, Any]]
     
     # LangGraph Output
+<<<<<<< Updated upstream
     refined_roadmap: NotRequired[List[Dict[str, Any]]]
     final_recommendations: NotRequired[Dict[str, Any]]
     review_required: NotRequired[bool]
     status_message: NotRequired[str]
+=======
+    refined_roadmap: NotRequired[List[RoadmapStep]]
+    youtube_resources: NotRequired[List[LearningResource]]
+    ranked_resources: NotRequired[List[LearningResource]]
+    seen_youtube_urls: NotRequired[List[str]]
+    final_recommendations: NotRequired[Dict[str, Any]]
+    review_required: NotRequired[bool]
+    verification_retries: NotRequired[int]
+    status_message: NotRequired[str]
+>>>>>>> Stashed changes

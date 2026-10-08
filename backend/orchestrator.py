@@ -155,6 +155,13 @@ def _complete_session(context: dict, evaluation: dict, user_profile: dict) -> di
                 and isinstance(item.get("url"), str)
                 and item["url"].startswith(("https://", "http://"))
             ]
+        youtube_resources = step.get("youtube_resources")
+        if not isinstance(youtube_resources, list) or not youtube_resources:
+            youtube_resources = step.get("resources", [])
+        step["youtube_resources"] = youtube_resources if isinstance(youtube_resources, list) else []
+        step["resources"] = step["youtube_resources"]  # Legacy frontend field.
+        web_resources = step.get("web_resources", [])
+        step["web_resources"] = web_resources if isinstance(web_resources, list) else []
 
     context["difficulty"] = evaluation
     context["roadmap"] = roadmap
