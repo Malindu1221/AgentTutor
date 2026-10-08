@@ -25,11 +25,8 @@ def build_step_youtube_query(step_title: str, domain: str, difficulty: str) -> s
 
 def canonical_youtube_watch_url(url: str) -> str | None:
     """Return a canonical watch URL for direct YouTube video links."""
-<<<<<<< HEAD
     if not isinstance(url, str):
         return None
-=======
->>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
     try:
         parsed_url = urlparse(url)
     except ValueError:
