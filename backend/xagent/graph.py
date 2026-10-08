@@ -6,6 +6,7 @@ from xagent.nodes import (
     finalize_node,
     generate_assessment_node,
     generate_roadmap_node,
+    rank_content_node,
     retrieve_content_node,
     validate_topic_node,
     verify_content_node,
@@ -51,6 +52,7 @@ def build_graph():
     
     
     builder.add_node("web_search", web_search_node)
+    builder.add_node("rank_content", rank_content_node)
     
     builder.add_node("verify", verify_content_node)
     builder.add_node("increment_verification_retries", increment_verification_retries)
@@ -72,9 +74,10 @@ def build_graph():
     builder.add_edge("roadmap_generation", "adapt")
     builder.add_edge("adapt", "retrieve")
     
-    # New Edges: retrieve (YouTube) -> web_search (Tavily) -> verify
+    # Retrieval and ranking run before roadmap verification.
     builder.add_edge("retrieve", "web_search")
-    builder.add_edge("web_search", "verify")
+    builder.add_edge("web_search", "rank_content")
+    builder.add_edge("rank_content", "verify")
     
     # 3. Add Conditional Routing
     builder.add_conditional_edges(

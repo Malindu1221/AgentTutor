@@ -1,5 +1,29 @@
 from typing import TypedDict, List, Dict, Any, Literal, NotRequired
 
+
+class LearningResource(TypedDict, total=False):
+    """A YouTube or web resource attached to a roadmap step."""
+
+    title: str
+    description: str
+    url: str
+    thumbnail: str
+    type: str
+    relevance_score: float
+
+
+class RoadmapStep(TypedDict, total=False):
+    """A roadmap step and its source-specific and ranked resources."""
+
+    id: str
+    title: str
+    description: str
+    estimated_time_hours: int
+    resources: List[LearningResource]
+    web_resources: List[LearningResource]
+    ranked_resources: List[LearningResource]
+
+
 class AgentTutorState(TypedDict):
     """The shared state that flows through the LangGraph recommendation pipeline."""
     session_id: str
@@ -14,12 +38,13 @@ class AgentTutorState(TypedDict):
     mcqs: NotRequired[List[Dict[str, Any]]]
     
     # Data from Orchestrator (Phase 2)
-    base_roadmap: NotRequired[List[Dict[str, Any]]]
+    base_roadmap: NotRequired[List[RoadmapStep]]
     user_profile: NotRequired[Dict[str, Any]]
     evaluation: NotRequired[Dict[str, Any]]
     
     # LangGraph Output
-    refined_roadmap: NotRequired[List[Dict[str, Any]]]
+    refined_roadmap: NotRequired[List[RoadmapStep]]
+    ranked_resources: NotRequired[List[LearningResource]]
     final_recommendations: NotRequired[Dict[str, Any]]
     review_required: NotRequired[bool]
     verification_retries: NotRequired[int]

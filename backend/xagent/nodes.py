@@ -5,6 +5,7 @@ import httpx
 import re
 from pydantic import BaseModel, ConfigDict
 from xagent.state import AgentTutorState
+from agents.ranking_agent import rank_and_filter_resources_sync
 from services.llm_client import call_groq, call_groq_json
 from utils.json_utils import extract_and_parse_json
 from agents.content import fetch_youtube_resources
@@ -266,4 +267,42 @@ def web_search_node(state: AgentTutorState) -> AgentTutorState:
     state["refined_roadmap"] = roadmap
     state["status_message"] = "Web articles appended."
     
+    return state
+
+
+def rank_content_node(state: AgentTutorState) -> AgentTutorState:
+    """Rank each step's YouTube and web resources before verification."""
+    roadmap = state.get("refined_roadmap", [])
+    target_domain = " ".join(
+        value
+        for value in (state.get("query", ""), state.get("domain", ""))
+        if value
+    )
+    all_ranked_resources = []
+
+    for module in roadmap:
+        youtube_resources = module.get("resources", [])
+        web_resources = module.get("web_resources", [])
+        ranked_resources = rank_and_filter_resources_sync(
+            target_domain,
+            youtube_resources if isinstance(youtube_resources, list) else [],
+            web_resources if isinstance(web_resources, list) else [],
+            limit=4,
+        )
+        module["ranked_resources"] = ranked_resources
+        module["resources"] = [
+            resource
+            for resource in ranked_resources
+            if resource.get("type") == "youtube_video"
+        ]
+        module["web_resources"] = [
+            resource
+            for resource in ranked_resources
+            if resource.get("type") == "web_resource"
+        ]
+        all_ranked_resources.extend(ranked_resources)
+
+    state["refined_roadmap"] = roadmap
+    state["ranked_resources"] = all_ranked_resources
+    state["status_message"] = "YouTube and web resources ranked by domain relevance."
     return state
