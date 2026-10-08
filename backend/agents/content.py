@@ -46,8 +46,9 @@ def recommend_content(
             continue
 
         system_instruction = (
-            f"Recommend {limit} high-quality educational resources for learning '{title}' "
+            f"Recommend {limit} high-quality English-language educational resources for learning '{title}' "
             f"in domain '{domain}' at '{difficulty}' level. "
+            "Ensure resources are highly relevant, avoiding unrelated or short-form (e.g. YouTube shorts) content. "
             "Use the learner profile as contextual background when selecting appropriate resources. "
             "Return ONLY a JSON array of objects with keys: "
             "\"title\", \"url\", \"description\", \"tags\" (array of strings)."
@@ -68,10 +69,11 @@ def recommend_content(
             pass
 
         # Fallback Search Links
-        safe_term = title.replace(" ", "+")
+        safe_term = f"{difficulty} level {title} English".replace(" ", "+")
+        yt_term = f"{difficulty} level {title} tutorial -shorts".replace(" ", "+")
         recommendations[title] = [
-            {"title": f"Google Search: {title}", "url": f"https://www.google.com/search?q={safe_term}", "description": f"Curated web articles for {title}", "tags": [domain]},
-            {"title": f"YouTube Tutorials: {title}", "url": f"https://www.youtube.com/results?search_query={safe_term}", "description": f"Video walkthroughs for {title}", "tags": ["video", domain]}
+            {"title": f"Google Search: {title}", "url": f"https://www.google.com/search?q={safe_term}", "description": f"Curated web articles for {title} ({difficulty})", "tags": [domain, difficulty, "english"]},
+            {"title": f"YouTube Tutorials: {title}", "url": f"https://www.youtube.com/results?search_query={yt_term}", "description": f"Video walkthroughs for {title} ({difficulty})", "tags": ["video", domain, difficulty, "english"]}
         ]
 
     return recommendations
@@ -85,8 +87,9 @@ def fetch_youtube_resources(topic: str, max_results: int = 2) -> list:
     url = "https://www.googleapis.com/youtube/v3/search"
     params = {
         "part": "snippet",
-        "q": f"{topic} tutorial",
+        "q": f"{topic} -shorts",
         "type": "video",
+        "relevanceLanguage": "en",
         "maxResults": max_results,
         "key": YOUTUBE_API_KEY
     }
