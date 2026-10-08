@@ -209,7 +209,14 @@ function ProfileContent() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => router.push("/recommendations?generate=1")}
+                    onClick={async () => {
+                      try {
+                        await apiFetch("/recommendations/generate", { method: "POST" });
+                      } catch (err) {
+                        console.error("Failed to regenerate recommendations", err);
+                      }
+                      router.push("/");
+                    }}
                     className="mt-3 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white shadow-md transition-all hover:bg-slate-800"
                   >
                     Generate updated recommendations
