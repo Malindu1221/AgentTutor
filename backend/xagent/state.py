@@ -1,5 +1,6 @@
 from typing import TypedDict, List, Dict, Any, Literal, NotRequired
 
+
 class LearningResource(TypedDict, total=False):
     """A YouTube or web resource attached to a roadmap step."""
 
@@ -38,7 +39,7 @@ class AgentTutorState(TypedDict):
     mcqs: NotRequired[List[Dict[str, Any]]]
     
     # Data from Orchestrator (Phase 2)
-    base_roadmap: NotRequired[List[RoadmapStep]]
+    base_roadmap: NotRequired[List[Dict[str, Any]]]
     user_profile: NotRequired[Dict[str, Any]]
     evaluation: NotRequired[Dict[str, Any]]
     
