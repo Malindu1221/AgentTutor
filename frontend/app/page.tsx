@@ -135,6 +135,10 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to start session:", error);
+      if (error instanceof Error && error.message === "LIMIT_EXCEEDED") {
+        router.push("/payment");
+        return;
+      }
       setError(error instanceof Error ? error.message : "Could not start the learning session.");
     } finally {
       setLoading(false);
