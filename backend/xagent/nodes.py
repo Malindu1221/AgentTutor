@@ -3,12 +3,17 @@ import logging
 import os
 import httpx
 import re
+from urllib.parse import urlparse
 from pydantic import BaseModel, ConfigDict
 from xagent.state import AgentTutorState
 from agents.ranking_agent import rank_and_filter_resources_sync
 from services.llm_client import call_groq, call_groq_json
 from utils.json_utils import extract_and_parse_json
-from agents.content import fetch_youtube_resources
+from agents.content import (
+    build_step_youtube_query,
+    canonical_youtube_watch_url,
+    fetch_youtube_resources,
+)
 from agents.safety import verify_roadmap_quality
 from agents.explainability import generate_explanations
 from agents.roadmap import generate_roadmap
@@ -170,19 +175,40 @@ def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
     print("[LangGraph] Fetching YouTube learning resources for roadmap modules...")
     
     roadmap = state.get("refined_roadmap", [])
-    # Fallback to domain if query is missing, but prioritize the exact user query
-    topic = state.get("query") or state.get("domain", "") 
+    topic = state.get("query") or state.get("domain", "")
+    domain = " ".join(
+        value
+        for value in (state.get("domain", ""), topic)
+        if value
+    )
     difficulty = state.get("difficulty_level", "beginner")
+    seen_urls = set(state.get("seen_youtube_urls", []))
     
     for module in roadmap:
-        # Tightly couple the exact user query with the module title
-        search_query = f"{difficulty} level {topic} {module.get('title')} tutorial"
+        step_title = str(module.get("title", ""))
+        search_query = build_step_youtube_query(
+            step_title,
+            domain or topic,
+            difficulty,
+        )
         
-        # Fetch 2 video links per module
         resources = fetch_youtube_resources(search_query, max_results=2)
-        module["resources"] = resources
+        unique_resources = []
+        for resource in resources:
+            url = resource.get("url")
+            canonical_url = (
+                canonical_youtube_watch_url(url)
+                if isinstance(url, str)
+                else None
+            )
+            if not canonical_url or canonical_url in seen_urls:
+                continue
+            seen_urls.add(canonical_url)
+            unique_resources.append({**resource, "url": canonical_url})
+        module["resources"] = unique_resources
         
     state["refined_roadmap"] = roadmap
+    state["seen_youtube_urls"] = sorted(seen_urls)
     state["status_message"] = "YouTube content resources appended."
     
     return state
@@ -238,7 +264,12 @@ def web_search_node(state: AgentTutorState) -> AgentTutorState:
         return state
         
     for module in roadmap:
-        search_query = f"{difficulty} level {topic} {module.get('title')} documentation text articles English"
+        search_query = (
+            f"{difficulty} level {topic} {module.get('title')} "
+            "documentation text articles English "
+            "-site:youtube.com -site:youtu.be -site:vimeo.com "
+            "-jobs -indeed -hiring -careers -vacancies"
+        )
         
         try:
             with httpx.Client() as client:
@@ -254,7 +285,35 @@ def web_search_node(state: AgentTutorState) -> AgentTutorState:
                 
                 if response.status_code == 200:
                     results = response.json().get("results", [])
-                    web_links = [{"title": r.get("title"), "url": r.get("url")} for r in results]
+                    web_links = []
+                    for result in results:
+                        if not isinstance(result, dict):
+                            continue
+                        result_url = result.get("url")
+                        if not isinstance(result_url, str):
+                            continue
+                        try:
+                            host = (urlparse(result_url).hostname or "").lower()
+                        except ValueError:
+                            continue
+                        blocked_hosts = (
+                            "youtube.com",
+                            "youtu.be",
+                            "vimeo.com",
+                            "indeed.com",
+                        )
+                        if any(
+                            host == blocked or host.endswith(f".{blocked}")
+                            for blocked in blocked_hosts
+                        ):
+                            continue
+                        web_links.append(
+                            {
+                                "title": result.get("title", ""),
+                                "description": result.get("content", ""),
+                                "url": result_url,
+                            }
+                        )
                     module["web_resources"] = web_links
                 else:
                     print(f"[Tavily Error] Status: {response.status_code}, Message: {response.text}")
