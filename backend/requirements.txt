@@ -11,3 +11,6 @@ bcrypt
 PyJWT
 pypdf
 python-multipart
+langchain-huggingface
+sentence-transformers
+torch
