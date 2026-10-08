@@ -3,15 +3,8 @@ import logging
 import os
 import httpx
 import re
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
->>>>>>> Stashed changes
-=======
-from urllib.parse import urlparse
->>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
 from pydantic import BaseModel, ConfigDict
 from xagent.state import AgentTutorState
 from agents.ranking_agent import rank_and_filter_resources_sync
@@ -265,11 +258,6 @@ def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
     print("[LangGraph] Fetching YouTube and web resources for roadmap modules...")
     
     roadmap = state.get("refined_roadmap", [])
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-    # Fallback to domain if query is missing, but prioritize the exact user query
-    topic = state.get("query") or state.get("domain", "") 
-=======
     topic = state.get("query") or state.get("domain", "")
     domain = " ".join(
         value
@@ -277,43 +265,7 @@ def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
         if value
     )
     difficulty = state.get("difficulty_level", "beginner")
-    seen_urls = set(state.get("seen_youtube_urls", []))
->>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
     
-    for module in roadmap:
-        step_title = str(module.get("title", ""))
-        search_query = build_step_youtube_query(
-            step_title,
-            domain or topic,
-            difficulty,
-        )
-        
-        resources = fetch_youtube_resources(search_query, max_results=2)
-        unique_resources = []
-        for resource in resources:
-            url = resource.get("url")
-            canonical_url = (
-                canonical_youtube_watch_url(url)
-                if isinstance(url, str)
-                else None
-            )
-            if not canonical_url or canonical_url in seen_urls:
-                continue
-            seen_urls.add(canonical_url)
-            unique_resources.append({**resource, "url": canonical_url})
-        module["resources"] = unique_resources
-        
-    state["refined_roadmap"] = roadmap
-    state["seen_youtube_urls"] = sorted(seen_urls)
-    state["status_message"] = "YouTube content resources appended."
-=======
-    topic = state.get("query") or state.get("domain", "")
-    domain = " ".join(
-        value
-        for value in (state.get("domain", ""), topic)
-        if value
-    )
-    difficulty = state.get("difficulty_level", "beginner")
     def fetch_youtube(module):
         title = str(module.get("title", ""))
         specific_query = build_step_youtube_query(title, domain or topic, difficulty)
@@ -361,7 +313,6 @@ def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
 
     state["refined_roadmap"] = roadmap
     state["status_message"] = "YouTube videos and web articles fetched."
->>>>>>> Stashed changes
     
     return state
 
@@ -409,90 +360,14 @@ def web_search_node(state: AgentTutorState) -> AgentTutorState:
     # Retained as a compatibility node for callers that invoke it directly.
     roadmap = state.get("refined_roadmap", [])
     topic = state.get("query") or state.get("domain", "")
-<<<<<<< Updated upstream
-    api_key = os.getenv("TAVILY_API_KEY")
-    difficulty = state.get("difficulty_level", "beginner")
-    
-    if not api_key:
-        print("[LangGraph] Warning: TAVILY_API_KEY not found in .env")
-        return state
-        
-    for module in roadmap:
-        search_query = (
-            f"{difficulty} level {topic} {module.get('title')} "
-            "documentation text articles English "
-            "-site:youtube.com -site:youtu.be -site:vimeo.com "
-            "-jobs -indeed -hiring -careers -vacancies"
-        )
-        
-        try:
-            with httpx.Client() as client:
-                response = client.post(
-                    "https://api.tavily.com/search",
-                    json={
-                        "api_key": api_key,
-                        "query": search_query,
-                        "max_results": 2
-                    },
-                    timeout=15.0
-                )
-                
-                if response.status_code == 200:
-                    results = response.json().get("results", [])
-                    web_links = []
-                    for result in results:
-                        if not isinstance(result, dict):
-                            continue
-                        result_url = result.get("url")
-                        if not isinstance(result_url, str):
-                            continue
-                        try:
-                            host = (urlparse(result_url).hostname or "").lower()
-                        except ValueError:
-                            continue
-                        blocked_hosts = (
-                            "youtube.com",
-                            "youtu.be",
-                            "vimeo.com",
-                            "indeed.com",
-                        )
-                        if any(
-                            host == blocked or host.endswith(f".{blocked}")
-                            for blocked in blocked_hosts
-                        ):
-                            continue
-                        web_links.append(
-                            {
-                                "title": result.get("title", ""),
-                                "description": result.get("content", ""),
-                                "url": result_url,
-                            }
-                        )
-                    module["web_resources"] = web_links
-                else:
-                    print(f"[Tavily Error] Status: {response.status_code}, Message: {response.text}")
-                    module["web_resources"] = []
-                    
-        except Exception as e:
-            print(f"[LangGraph] Web search failed for {module.get('title')}: {e}")
-            module["web_resources"] = []
-            
-=======
     difficulty = state.get("difficulty_level", "beginner")
     for module in roadmap:
         if not module.get("web_resources"):
             module["web_resources"] = _valid_web_resources(
                 _tavily_search(_web_query(module.get("title", ""), topic, difficulty))
             )
->>>>>>> Stashed changes
     state["refined_roadmap"] = roadmap
     
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-    return state
-=======
-=======
->>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
     return state
 
 
@@ -507,7 +382,6 @@ def rank_content_node(state: AgentTutorState) -> AgentTutorState:
     all_ranked_resources = []
 
     for module in roadmap:
-<<<<<<< HEAD
         youtube_resources = module.get("youtube_resources", module.get("resources", []))
         web_resources = module.get("web_resources", [])
         youtube_resources = _valid_youtube_resources(youtube_resources)
@@ -529,34 +403,9 @@ def rank_content_node(state: AgentTutorState) -> AgentTutorState:
         module["web_resources"] = ranked_web
         ranked_resources = ranked_youtube + ranked_web
         module["ranked_resources"] = ranked_resources
-=======
-        youtube_resources = module.get("resources", [])
-        web_resources = module.get("web_resources", [])
-        ranked_resources = rank_and_filter_resources_sync(
-            target_domain,
-            youtube_resources if isinstance(youtube_resources, list) else [],
-            web_resources if isinstance(web_resources, list) else [],
-            limit=4,
-        )
-        module["ranked_resources"] = ranked_resources
-        module["resources"] = [
-            resource
-            for resource in ranked_resources
-            if resource.get("type") == "youtube_video"
-        ]
-        module["web_resources"] = [
-            resource
-            for resource in ranked_resources
-            if resource.get("type") == "web_resource"
-        ]
->>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
         all_ranked_resources.extend(ranked_resources)
 
     state["refined_roadmap"] = roadmap
     state["ranked_resources"] = all_ranked_resources
     state["status_message"] = "YouTube and web resources ranked by domain relevance."
     return state
-<<<<<<< HEAD
->>>>>>> Stashed changes
-=======
->>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
