@@ -3,6 +3,10 @@ import logging
 import re
 from functools import lru_cache
 from typing import Any
+<<<<<<< HEAD
+from urllib.parse import parse_qs, urlparse
+=======
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
 
 import torch
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -19,6 +23,16 @@ _LANGUAGE_ALIASES = (
     "javascript", "typescript", "golang", "python", "kotlin", "swift",
     "scala", "java", "rust", "ruby", "php", "c++", "c#", "golang",
 )
+<<<<<<< HEAD
+_VIDEO_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+_BLOCKED_ARTICLE_HOSTS = (
+    "youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "tiktok.com",
+    "twitch.tv", "facebook.com", "instagram.com", "indeed.com", "glassdoor.com",
+    "linkedin.com", "ziprecruiter.com", "monster.com", "careerbuilder.com",
+)
+_JOB_PATTERN = re.compile(r"\b(jobs?|careers?|hiring|vacancies|employment)\b", re.I)
+=======
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
 
 
 @lru_cache(maxsize=1)
@@ -73,10 +87,39 @@ def _prepare_candidates(
         for resource in items:
             if not isinstance(resource, dict) or not resource.get("title"):
                 continue
+<<<<<<< HEAD
+            try:
+                parsed = urlparse(str(resource.get("url", "")))
+                host = (parsed.hostname or "").lower()
+            except ValueError:
+                continue
+            if parsed.scheme not in {"http", "https"} or not host:
+                continue
+            if default_type == "youtube_video":
+                if host not in _VIDEO_HOSTS:
+                    continue
+                video_id = (
+                    parse_qs(parsed.query).get("v", [""])[0]
+                    if host != "youtu.be"
+                    else parsed.path.strip("/").split("/")[0]
+                )
+                if not video_id:
+                    continue
+            else:
+                if any(host == blocked or host.endswith(f".{blocked}") for blocked in _BLOCKED_ARTICLE_HOSTS):
+                    continue
+                if _JOB_PATTERN.search(" ".join(str(resource.get(k, "")) for k in ("title", "description", "url"))):
+                    continue
+            if not _matches_domain(resource, anchor):
+                continue
+            candidate = dict(resource)
+            candidate["type"] = default_type
+=======
             if not _matches_domain(resource, anchor):
                 continue
             candidate = dict(resource)
             candidate.setdefault("type", default_type)
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
             candidates.append(candidate)
     return candidates
 
