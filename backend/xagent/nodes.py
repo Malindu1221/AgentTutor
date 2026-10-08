@@ -171,10 +171,11 @@ def retrieve_content_node(state: AgentTutorState) -> AgentTutorState:
     roadmap = state.get("refined_roadmap", [])
     # Fallback to domain if query is missing, but prioritize the exact user query
     topic = state.get("query") or state.get("domain", "") 
+    difficulty = state.get("difficulty_level", "beginner")
     
     for module in roadmap:
         # Tightly couple the exact user query with the module title
-        search_query = f"{topic} {module.get('title')} tutorial"
+        search_query = f"{difficulty} level {topic} {module.get('title')} tutorial"
         
         # Fetch 2 video links per module
         resources = fetch_youtube_resources(search_query, max_results=2)
@@ -229,13 +230,14 @@ def web_search_node(state: AgentTutorState) -> AgentTutorState:
     roadmap = state.get("refined_roadmap", [])
     topic = state.get("query") or state.get("domain", "")
     api_key = os.getenv("TAVILY_API_KEY")
+    difficulty = state.get("difficulty_level", "beginner")
     
     if not api_key:
         print("[LangGraph] Warning: TAVILY_API_KEY not found in .env")
         return state
         
     for module in roadmap:
-        search_query = f"{topic} {module.get('title')} documentation text articles"
+        search_query = f"{difficulty} level {topic} {module.get('title')} documentation text articles English"
         
         try:
             with httpx.Client() as client:
