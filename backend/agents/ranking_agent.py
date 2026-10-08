@@ -3,7 +3,10 @@ import logging
 import re
 from functools import lru_cache
 from typing import Any
+<<<<<<< HEAD
 from urllib.parse import parse_qs, urlparse
+=======
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
 
 import torch
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -20,6 +23,7 @@ _LANGUAGE_ALIASES = (
     "javascript", "typescript", "golang", "python", "kotlin", "swift",
     "scala", "java", "rust", "ruby", "php", "c++", "c#", "golang",
 )
+<<<<<<< HEAD
 _VIDEO_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
 _BLOCKED_ARTICLE_HOSTS = (
     "youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "tiktok.com",
@@ -27,6 +31,8 @@ _BLOCKED_ARTICLE_HOSTS = (
     "linkedin.com", "ziprecruiter.com", "monster.com", "careerbuilder.com",
 )
 _JOB_PATTERN = re.compile(r"\b(jobs?|careers?|hiring|vacancies|employment)\b", re.I)
+=======
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
 
 
 @lru_cache(maxsize=1)
@@ -81,6 +87,7 @@ def _prepare_candidates(
         for resource in items:
             if not isinstance(resource, dict) or not resource.get("title"):
                 continue
+<<<<<<< HEAD
             try:
                 parsed = urlparse(str(resource.get("url", "")))
                 host = (parsed.hostname or "").lower()
@@ -107,6 +114,12 @@ def _prepare_candidates(
                 continue
             candidate = dict(resource)
             candidate["type"] = default_type
+=======
+            if not _matches_domain(resource, anchor):
+                continue
+            candidate = dict(resource)
+            candidate.setdefault("type", default_type)
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
             candidates.append(candidate)
     return candidates
 

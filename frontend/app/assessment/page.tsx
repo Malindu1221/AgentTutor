@@ -95,36 +95,39 @@ export default function AssessmentPage() {
   if (!sessionData) return null;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 md:px-8 md:py-12">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-800">
+    <main className="min-h-screen bg-slate-200 text-slate-900">
+      <header className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-4 py-12 text-white shadow-xl md:px-8 md:py-16">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-12">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-200">
             Personalized learning path
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">
             Diagnostic Assessment
           </h1>
-          <p className="mt-3 text-slate-600">
+          <p className="mt-3 max-w-2xl text-slate-300">
             Answer a few questions so we can tailor your roadmap to your current level.
           </p>
-          <p className="mt-4 inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+          <p className="mt-5 inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-blue-100">
             Domain: {sessionData.domain}
           </p>
-        </header>
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6 md:py-12 lg:px-12">
 
         {sessionData.mcqs.map((mcq) => (
           <section
             key={mcq.id}
-            className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-lg shadow-slate-900/5 md:p-8"
+            className="mb-6 rounded-2xl border border-gray-300 bg-white p-7 shadow-2xl shadow-slate-900/15 md:p-10"
           >
-            <h2 className="mb-5 text-lg font-semibold leading-relaxed text-gray-800">
+            <h2 className="mb-5 text-lg font-semibold leading-relaxed text-gray-800 md:text-xl">
               {mcq.question}
             </h2>
             <div className="space-y-2">
               {mcq.options.map((opt, idx) => (
                 <label
                   key={idx}
-                  className="flex cursor-pointer items-center gap-3 rounded-xl p-3 transition-colors hover:bg-gray-50 has-[:checked]:bg-blue-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl p-4 transition-colors hover:bg-gray-50 has-[:checked]:bg-blue-50"
                 >
                   <input
                     type="radio"
@@ -144,7 +147,7 @@ export default function AssessmentPage() {
           <button
             onClick={submitAnswers}
             disabled={loading || Object.keys(answers).length < sessionData.mcqs.length}
-            className="w-full rounded-xl bg-slate-900 px-8 py-4 font-semibold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 md:w-auto"
+            className="w-full rounded-xl bg-gradient-to-r from-slate-900 to-blue-950 px-8 py-4 font-semibold text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:from-blue-950 hover:to-indigo-950 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 md:w-auto"
           >
             {loading ? "Analyzing and Building Roadmap..." : "Submit Answers"}
           </button>

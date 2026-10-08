@@ -6,10 +6,14 @@ from xagent.nodes import (
     finalize_node,
     generate_assessment_node,
     generate_roadmap_node,
+    rank_content_node,
     retrieve_content_node,
     validate_topic_node,
     verify_content_node,
 )
+
+MAX_VERIFICATION_RETRIES = 2
+
 
 def route_after_validation(state: AgentTutorState) -> str:
     """Routes valid topics into assessment or roadmap generation."""
@@ -20,10 +24,19 @@ def route_after_validation(state: AgentTutorState) -> str:
     return "roadmap"
 
 def should_review(state: AgentTutorState) -> str:
-    """Conditional edge router based on verification results."""
-    if state.get("review_required"):
+    """Retry roadmap refinement for quality failures, up to the configured limit."""
+    if (
+        state.get("review_required")
+        and state.get("verification_retries", 0) < MAX_VERIFICATION_RETRIES
+    ):
         return "review"
     return "finalize"
+
+
+def increment_verification_retries(state: AgentTutorState) -> dict[str, int]:
+    """Count a scheduled rework pass before the graph returns to adaptation."""
+    return {"verification_retries": state.get("verification_retries", 0) + 1}
+
 
 def build_graph():
     """Builds and compiles the AgentTutor LangGraph DAG."""
@@ -39,11 +52,16 @@ def build_graph():
     
 <<<<<<< Updated upstream
     builder.add_node("web_search", web_search_node)
+<<<<<<< HEAD
 =======
     builder.add_node("rank_content", rank_content_node)
 >>>>>>> Stashed changes
+=======
+    builder.add_node("rank_content", rank_content_node)
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
     
     builder.add_node("verify", verify_content_node)
+    builder.add_node("increment_verification_retries", increment_verification_retries)
     # Updated to call your actual explainability function instead of the lambda
     builder.add_node("finalize", finalize_node)
 
@@ -62,8 +80,14 @@ def build_graph():
     builder.add_edge("roadmap_generation", "adapt")
     builder.add_edge("adapt", "retrieve")
     
+<<<<<<< HEAD
     # Retrieval fetches both resource categories concurrently before ranking.
     builder.add_edge("retrieve", "rank_content")
+=======
+    # Retrieval and ranking run before roadmap verification.
+    builder.add_edge("retrieve", "web_search")
+    builder.add_edge("web_search", "rank_content")
+>>>>>>> f10e74d6afbfa921d2dab7979ede24f676a87344
     builder.add_edge("rank_content", "verify")
     
     # 3. Add Conditional Routing
@@ -71,10 +95,11 @@ def build_graph():
         "verify",
         should_review,
         {
-            "review": END, 
-            "finalize": "finalize"
+            "review": "increment_verification_retries",
+            "finalize": "finalize",
         }
     )
+    builder.add_edge("increment_verification_retries", "adapt")
     
     builder.add_edge("finalize", END)
 
