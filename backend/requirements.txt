@@ -1,7 +1,7 @@
-fastapi
+fastapi>=0.115,<1.0
 groq
 httpx
-langgraph
+langgraph>=1.0,<2.0
 pydantic[email]
 python-dotenv
 requests
@@ -12,5 +12,5 @@ PyJWT
 pypdf
 python-multipart
 langchain-huggingface
-sentence-transformers
+sentence-transformers>=3,<6
 torch
